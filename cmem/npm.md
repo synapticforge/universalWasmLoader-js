@@ -64,6 +64,25 @@ asks for a fresh one-time password on every call; repository variables need GitH
 On this machine npm runs as `fnm exec --using=24 cmd /c npm …` (`fnm exec npm` cannot start the
 `.cmd` shim).
 
+## 1.1.1 (2026-10-21): JSR published, npm job SKIPPED
+
+`bun run bump patch` (gate: floor patch, v1.1.0's tests 24/24), `Release v1.1.1` `b706cc6`,
+`bun run release`. Publish run 39691735587: the JSR job green — **JSR 1.1.1 rekorLogId
+`3367515417`**, latest, score 100, the first JSR provenance from the `synapticforge1` org; CI
+green. **The `npm` job was SKIPPED:** `vars.NPM_PUBLISH == 'true'` was false although the owner
+had "added a secret". A SECRET is invisible to `vars.`; it must be a repository VARIABLE (or an
+org variable granted to this repo) with the value `true`. GitHub compares strings
+case-insensitively, so the value's case is not the cause.
+
+Re-running that run cannot help (it uses the workflow AT the tag, and its JSR job would fail on
+the existing 1.1.1), so `publish.yml` gained a **`workflow_dispatch`** with a `tag` input (owner's
+choice, 2026-10-21): it runs ONLY the npm job, for a release tag JSR already has (checked against
+`api.jsr.io` first; the input reaches the shell through an env var and must match `vX.Y.Z`). Same
+workflow file name, so the trusted publisher still matches. ⏳ Owner: set the variable, then
+Actions → Publish → Run workflow → `v1.1.1`; the job's provenance read-back is the proof.
+npmjs.org also lists a `0.0.0-stage` version not published from here (seen 2026-10-21); the
+owner's to explain.
+
 ## Left to the owner, in order (binaryang's experience, `publishing.md` § 1.13.1)
 
 1. **The first version by hand** — npm's trusted publisher is configured on the PACKAGE, which must

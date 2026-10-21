@@ -4,9 +4,18 @@ on:
   push:
     tags:
       - "v*"
+  # npm ONLY, for a release tag JSR already has (owner, 2026-10-21): v1.1.1's npm job was skipped
+  # because NPM_PUBLISH was not yet a repository variable. Actions → Publish → Run workflow, with
+  # the tag. The JSR job does not run on a dispatch.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish to npm (e.g. v1.1.1); JSR must already have it"
+        required: true
 
 jobs:
   publish:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -124,19 +133,40 @@ jobs:
   # published by hand and the npm trusted publisher is configured (cmem/npm.md). Trusted
   # publishing: GitHub OIDC (`id-token: write`), no token; npm >= 11.5 is required for it.
   # Versions are immutable on both registries, so a failed npm job is re-run alone, never re-tagged.
+  # On a tag push it follows a SUCCESSFUL JSR job; on a dispatch it runs alone, for `inputs.tag`.
   npm:
-    name: Publish ${{ github.ref_name }} to npm
+    name: Publish ${{ inputs.tag || github.ref_name }} to npm
     needs: publish
-    if: vars.NPM_PUBLISH == 'true'
+    if: >-
+      !cancelled() && vars.NPM_PUBLISH == 'true' &&
+      ((github.event_name == 'push' && needs.publish.result == 'success') ||
+       github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
+    env:
+      # The input reaches the shell only through this variable, never interpolated into a script.
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
 
     steps:
+      - name: Check the release tag
+        run: |
+          if ! printf '%s' "$RELEASE_TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::not a release tag: $RELEASE_TAG"
+            exit 1
+          fi
+          # npm never gets a version JSR does not have (JSR stays the source).
+          VERSION="${RELEASE_TAG#v}"
+          if ! curl -sf -H "Cache-Control: no-cache" "https://api.jsr.io/scopes/jrmarcum/packages/universal-wasm-loader/versions/${VERSION}?cb=${GITHUB_RUN_ID}" > /dev/null; then
+            echo "::error::JSR has no ${VERSION}: publish it to JSR first (push the tag)"
+            exit 1
+          fi
+          echo "JSR has ${VERSION}; publishing it to npm"
+
       - name: Checkout
         run: |
-          git clone --depth=1 --branch ${{ github.ref_name }} \
+          git clone --depth=1 --branch "$RELEASE_TAG" \
             https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} .
 
       - name: Install Bun and dev dependencies
@@ -154,7 +184,7 @@ jobs:
 
       - name: Verify jsr.json version matches tag
         run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          TAG_VERSION="${RELEASE_TAG#v}"
           PKG_VERSION="$(jq -r .version jsr.json)"
           if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
             echo "::error::Tag version ($TAG_VERSION) does not match jsr.json version ($PKG_VERSION)"
@@ -172,7 +202,7 @@ jobs:
       # The evidence, as for JSR: the attestation read back from the registry, cache-busted.
       - name: Verify provenance was recorded on npm
         run: |
-          VERSION=${GITHUB_REF_NAME#v}
+          VERSION=${RELEASE_TAG#v}
           URL="https://registry.npmjs.org/@synapticforge1%2Funiversal-wasm-loader/${VERSION}"
           for i in $(seq 1 12); do
             P=$(curl -sf -H "Cache-Control: no-cache" "${URL}?cb=${GITHUB_RUN_ID}-${i}" | jq -r '.dist.attestations.provenance.predicateType // empty' 2>/dev/null || true)

@@ -17,10 +17,9 @@ JS-specific difference: path resolution (below).
   still `jrmarcum/wasmtk` (2026-10-21).
 - **JSR:** the package stays `@jrmarcum/universal-wasm-loader` (the JSR scope did not move). JSR's
   GitHub link already names `synapticforge1/universalWasmLoader-js` (`api.jsr.io`, updated
-  2026-10-20), which is what OIDC provenance from the new repo needs. ⬜ Unproven until the next
-  release's `rekorLogId` step passes.
-- **npm** (owner, 2026-10-21): `@synapticforge1/universal-wasm-loader`, built and proved, ⏳ not
-  yet published — [npm.md](npm.md).
+  2026-10-20); proven by JSR 1.1.1's provenance (rekorLogId `3367515417`, 2026-10-21).
+- **npm** (owner, 2026-10-21): `@synapticforge1/universal-wasm-loader` — 1.1.0 published by hand;
+  ⏳ 1.1.1 waits on the npm-only dispatch — [npm.md](npm.md).
 
 ## What it does
 
@@ -98,8 +97,9 @@ JSR). The v1.0.6 tag hit exactly this when the workflow was briefly switched to 
 the one **at the tagged commit**, so the tag must point at a commit that already contains a `run:`-only
 `publish.yml`.
 
-**Published:** `@jrmarcum/universal-wasm-loader@1.1.0` is live on JSR (2026-10-12) — **score 100**,
-provenance recorded (rekorLogId 3232619821). It was the first release from the Bun toolchain, and it
+**Published:** `@jrmarcum/universal-wasm-loader@1.1.1` is live on JSR (2026-10-21) — **score 100**,
+provenance recorded (rekorLogId 3367515417), the first release from the `synapticforge1` org.
+Before it, 1.1.0 (2026-10-12, rekorLogId 3232619821): It was the first release from the Bun toolchain, and it
 contains SPEC §10 plus the Node `file:` fix ([bun-migration.md](bun-migration.md)). 1.0.8 before it
 also scored 100 with provenance. The `run:`-only workflow delivered provenance cleanly both times.
 

@@ -28,9 +28,7 @@ lists what is still open. Close an item by striking it here with the commit that
 - ✅ **The new organization's Actions policy** — owner, 2026-10-21: "it has the same policy as
   before, and is the same as was used with binaryang." The workflows stay `run:`-only (valid under
   any policy; [overview.md](overview.md) § Release flow).
-- ⬜ **Provenance from the new repo**: JSR's GitHub link already names
-  `synapticforge1/universalWasmLoader-js` (2026-10-20); the next release's `rekorLogId` step is the
-  proof.
+- ✅ **Provenance from the new repo**: JSR 1.1.1, rekorLogId `3367515417` (2026-10-21).
 
 ## npm (owner, 2026-10-21: "setup an npm repository just as we did for binaryang")
 
@@ -38,7 +36,11 @@ lists what is still open. Close an item by striking it here with the commit that
   `scripts/npm/build.ts` + `prove.ts` (in CI), the `npm` job in `publish.yml` (off until
   `NPM_PUBLISH=true`). 6 of 6 mutants caught. [npm.md](npm.md).
 - ✅ (1) done 2026-10-21T23:03Z: `@synapticforge1/universal-wasm-loader@1.1.0` on npm, verified
-  as a user. ⏳ (2)–(4) next.
+  as a user. (2) the trusted publisher: confirmed by the owner. (4) 1.1.1 released: JSR ✅ with
+  provenance (`3367515417`), npm job SKIPPED because `NPM_PUBLISH` is not a repository variable.
+- ⏳ **Owner: set `NPM_PUBLISH=true` as a repository VARIABLE, then Actions → Publish → Run
+  workflow → `v1.1.1`** (the npm-only dispatch, [npm.md](npm.md) § "1.1.1"). Within npm's 2-day
+  trusted-publisher window (~2026-10-23).
 - ⏳ **The owner's steps, in order** ([npm.md](npm.md) § "Left to the owner"): (1) the first version
   BY HAND, `bun run npm:prove --tag v1.1.0` then `npm publish --provenance=false` from `dist/` as
   `synapticforgeun`; (2) the trusted publisher on the package (repo
