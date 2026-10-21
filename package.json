@@ -15,6 +15,8 @@
     "lint": "biome lint",
     "fixtures": "bun scripts/check-fixtures.ts",
     "gate": "bun run check && bun run lint && bun run manifest && bun run surface --check && bun run fixtures && bun run browser && bun run test",
+    "npm:build": "bun scripts/npm/build.ts",
+    "npm:prove": "bun scripts/npm/prove.ts",
     "bump": "bun scripts/bump.ts",
     "release": "bun scripts/publish.ts",
     "publish:dry": "deno publish --dry-run --allow-dirty"

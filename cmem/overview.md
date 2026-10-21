@@ -19,6 +19,8 @@ JS-specific difference: path resolution (below).
   GitHub link already names `synapticforge1/universalWasmLoader-js` (`api.jsr.io`, updated
   2026-10-20), which is what OIDC provenance from the new repo needs. ⬜ Unproven until the next
   release's `rekorLogId` step passes.
+- **npm** (owner, 2026-10-21): `@synapticforge1/universal-wasm-loader`, built and proved, ⏳ not
+  yet published — [npm.md](npm.md).
 
 ## What it does
 
@@ -82,13 +84,14 @@ Provenance requires the GitHub OIDC token to reach the runner — the workflow h
 "Check OIDC availability" diagnostic step (added 2026-06-15, mirroring wasmtk) because that org's
 OIDC was found to be environmentally gated.
 
-**`publish.yml` MUST use only `run:` steps — never `uses:` (third-party actions).** Under the
-`jrmarcum` owner the Actions policy permitted only actions owned by `jrmarcum`. ⬜ **Unverified for
-the `synapticforge1` organization** (2026-10-21): its policy has not been read (that needs an
-authenticated API call or the org settings page) and no workflow has run there yet. `run:`-only
-steps work under any policy, so they stay until the owner says otherwise. Under the old policy
-any `uses: actions/checkout` / `uses: denoland/setup-deno`
-made the run end in `startup_failure` (no step executes, so nothing reaches JSR even though the local
+**The workflows use only `run:` steps — never `uses:` (third-party actions).** Under the
+`jrmarcum` owner the Actions policy permitted only actions owned by `jrmarcum`. 🔒 **For the
+`synapticforge1` organization, owner, 2026-10-21: "it has the same policy as before, and is the same
+as was used with binaryang."** Observed the same day: binaryang's workflows in that organization DO
+use `actions/checkout`, `oven-sh/setup-bun`, `actions/setup-node`, `denoland/setup-deno` and run
+green. `run:` steps work under either reading, so this repo keeps them; switching to `uses:` would
+be a deliberate change, not a fix. Under the old policy any `uses: actions/checkout` /
+`uses: denoland/setup-deno` made the run end in `startup_failure` (no step executes, so nothing reaches JSR even though the local
 `deno task publish` still creates the tag/release — making it look "published on GitHub" but absent on
 JSR). The v1.0.6 tag hit exactly this when the workflow was briefly switched to external actions
 (2026-06-15); reverted to `git clone` + curl-install-Deno `run:` steps. The triggering workflow file is

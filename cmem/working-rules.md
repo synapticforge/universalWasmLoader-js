@@ -17,7 +17,7 @@ Rules, not lessons (the lessons are [best-practices.md](best-practices.md)). The
 ## The gate
 
 - **The local gate is CI's gate**: the `gates` steps of `.github/workflows/ci.yml` —
-  `bun run check`, `manifest`, `surface --check`, `fixtures`, `compat:selftest`, `compat`, `browser`, `test`,
+  `bun run check`, `manifest`, `surface --check`, `fixtures`, `compat:selftest`, `compat`, `browser`, `test`, `npm:prove`,
   `lint`, `publish:dry` — plus the `runtimes` matrix (`bun run test:node` with a Node on PATH,
   `test:deno`; `bun run lts` for every Node LTS line). Run on the COMMITTED tree, after the last edit.
 - **Diff the output, not the exit code**: 24 tests on every runtime (2026-10-12); a lower count is a
@@ -40,9 +40,9 @@ Rules, not lessons (the lessons are [best-practices.md](best-practices.md)). The
 6. **Line endings are LF**, pinned in `.gitattributes` wildcard-first; verify with `git check-attr`.
 7. **Never run a formatter on `cmem/`** or on `tests/` fixtures.
 8. **`.github/workflows/*` use `run:` steps only** — under the old `jrmarcum` owner the Actions
-   policy turned any `uses:` into a `startup_failure`; for the `synapticforge1` organization
-   (since 2026-10-21) it is unverified, and `run:` works under any policy
-   ([overview.md](overview.md) § Release flow).
+   policy turned any `uses:` into a `startup_failure`; the `synapticforge1` organization (since
+   2026-10-21) has "the same policy as before, and … as was used with binaryang" (owner), and
+   `run:` works under any policy ([overview.md](overview.md) § Release flow).
 
 ## Boundaries
 
