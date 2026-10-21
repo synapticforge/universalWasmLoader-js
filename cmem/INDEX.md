@@ -47,5 +47,5 @@ reference test suite green (`bun run gate`, plus `bun run test:node` / `test:den
 | [design-decisions.md](design-decisions.md) | 🔒 Invariants kept in full: the six design principles, the architectural decisions, the load path, WIT name conventions |
 | [fixtures.md](fixtures.md) | The reference fixture set (H7/S4): the stamp, regenerate/verify, the 2026-10-12 wasmtk comparison, the per-port hand-over |
 | [compat-gate.md](compat-gate.md) | The compatibility gate (H6): surface snapshot, floor, previous-tag tests, where each runs, the inversion record |
-| [overview.md](overview.md) | What this loader is, the API surface, ABI it implements, conformance/SPEC status, test suite, and the release flow |
+| [overview.md](overview.md) | Where it lives (GitHub `synapticforge1/universalWasmLoader-js`, JSR `@jrmarcum/universal-wasm-loader`), what this loader is, the API surface, ABI it implements, conformance/SPEC status, test suite, and the release flow |
 | [bun-migration.md](bun-migration.md) | 2026-10-12 move off Deno to Bun (+ Node): `jsr.json` manifest, `bun run` scripts, `node:test` suite, CI matrix, the Node `file:` URL bug it surfaced, open items |

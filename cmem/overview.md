@@ -8,6 +8,18 @@ other-language ports (`-rs`, `-py`, `-go`, `-jvm`, `-c`, `-dotnet`, `-dart`, `-z
 match this implementation's behavior and the cross-language `SPEC.md`, with ONE accepted
 JS-specific difference: path resolution (below).
 
+## Where it lives (2026-10-21)
+
+- **GitHub:** `https://github.com/synapticforge1/universalWasmLoader-js`, a public repo of the
+  **`synapticforge1` organization** (owner-controlled). 🔁 Moved there by the owner by 2026-10-21;
+  before: `jrmarcum/universalWasmLoader-js` (from 2026-10-12), `jrmarcum/universalWasmLoader`
+  before that. GitHub redirects both old URLs. binaryang moved to `synapticforge1` too; wasmtk is
+  still `jrmarcum/wasmtk` (2026-10-21).
+- **JSR:** the package stays `@jrmarcum/universal-wasm-loader` (the JSR scope did not move). JSR's
+  GitHub link already names `synapticforge1/universalWasmLoader-js` (`api.jsr.io`, updated
+  2026-10-20), which is what OIDC provenance from the new repo needs. ⬜ Unproven until the next
+  release's `rekorLogId` step passes.
+
 ## What it does
 
 Loads a `.wasm` module like an ESM import, auto-detecting its companion `.wit` and applying the
@@ -70,9 +82,13 @@ Provenance requires the GitHub OIDC token to reach the runner — the workflow h
 "Check OIDC availability" diagnostic step (added 2026-06-15, mirroring wasmtk) because that org's
 OIDC was found to be environmentally gated.
 
-**`publish.yml` MUST use only `run:` steps — never `uses:` (third-party actions).** This org's Actions
-policy permits only actions owned by `jrmarcum`; any `uses: actions/checkout` / `uses: denoland/setup-deno`
-makes the run end in `startup_failure` (no step executes, so nothing reaches JSR even though the local
+**`publish.yml` MUST use only `run:` steps — never `uses:` (third-party actions).** Under the
+`jrmarcum` owner the Actions policy permitted only actions owned by `jrmarcum`. ⬜ **Unverified for
+the `synapticforge1` organization** (2026-10-21): its policy has not been read (that needs an
+authenticated API call or the org settings page) and no workflow has run there yet. `run:`-only
+steps work under any policy, so they stay until the owner says otherwise. Under the old policy
+any `uses: actions/checkout` / `uses: denoland/setup-deno`
+made the run end in `startup_failure` (no step executes, so nothing reaches JSR even though the local
 `deno task publish` still creates the tag/release — making it look "published on GitHub" but absent on
 JSR). The v1.0.6 tag hit exactly this when the workflow was briefly switched to external actions
 (2026-06-15); reverted to `git clone` + curl-install-Deno `run:` steps. The triggering workflow file is

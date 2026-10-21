@@ -16,7 +16,7 @@ JSR stays the source of the package.** The cross-package guide is binaryang's
 | Tests | `tests/run_tests.js`, a plain script, 26 assertions | `tests/loader.test.js` on `node:test` + `@std/assert`: the same 26 assertions as **24 tests** (two pairs are one sequence each). Runs unchanged under `bun test`, `node --test`, `deno test` |
 | Scripts | `Deno.*` | `node:` builtins only (run on Bun, Node, Deno). `sync-version.ts` (a no-op) deleted — one manifest, nothing to sync |
 | CI | publish job only, `deno lint` | `ci.yml`: gates (tsc, manifest, browser, Bun tests, deno lint — 🔁 Biome since 2026-10-13, publish dry run) + runtimes matrix (Node 22.18 floor, 22, 24, Bun 1.4.3, Deno 2.x). `publish.yml`: Bun gate first, then `deno publish` DIRECTLY (F2), then the `rekorLogId` provenance check |
-| CI form | `run:` steps only | **still `run:` steps only** — this org's policy (see [overview.md](overview.md)); Bun via `bun.sh/install`, Node via the fnm install script, Deno via `deno.land/install.sh` |
+| CI form | `run:` steps only | **still `run:` steps only** — the old owner's Actions policy (unverified for `synapticforge1`; see [overview.md](overview.md)); Bun via `bun.sh/install`, Node via the fnm install script, Deno via `deno.land/install.sh` |
 
 ## A real bug the migration surfaced: the loader never worked on Node with local files
 
@@ -79,7 +79,8 @@ Merged `--no-ff` to `main` as `dd6a9ab` and pushed (owner: "proceed"). **CI run 
 passed on the first run, all six jobs:** Gates, plus tests on Node 22.18 (floor), Node 22, Node 24,
 Bun 1.4.3 and Deno 2.x. The `run:`-only workflow was accepted (no `startup_failure`).
 **The GitHub repo moved** to `jrmarcum/universalWasmLoader-js` (the old `universalWasmLoader`
-URL redirects); the local `origin` now points at the new URL.
+URL redirects); the local `origin` now points at the new URL. 🔁 Moved again, to the
+`synapticforge1` organization, by 2026-10-21: [overview.md](overview.md) § "Where it lives".
 
 ## Open items
 

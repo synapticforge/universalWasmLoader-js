@@ -21,6 +21,18 @@ lists what is still open. Close an item by striking it here with the commit that
 - **Publishing still needs Deno** (`deno publish`, F2 of binaryang's exit guide). By design; JSR's
   to solve before ~2027-10. Re-check when JSR ships a non-Deno publisher that keeps provenance.
 
+## The move to the `synapticforge1` organization (by 2026-10-21)
+
+- ⬜ **First CI run in the new organization**: no workflow has run since the move. The next push
+  shows whether `run:`-only CI still passes there (it should under any policy).
+- 🗓️ OWNER: **the new organization's Actions policy.** The `run:`-only rule came from the old
+  `jrmarcum` policy (only `jrmarcum`-owned actions allowed). If `synapticforge1` allows
+  `actions/checkout`, `oven-sh/setup-bun`, `actions/setup-node`, `denoland/setup-deno`, the
+  workflows could use them; until the owner says so they stay `run:`-only.
+- ⬜ **Provenance from the new repo**: JSR's GitHub link already names
+  `synapticforge1/universalWasmLoader-js` (2026-10-20); the next release's `rekorLogId` step is the
+  proof.
+
 ## Unmeasured
 
 - **Browser RUN**: `bun run browser` proves the export BUNDLES and the shipped source has no

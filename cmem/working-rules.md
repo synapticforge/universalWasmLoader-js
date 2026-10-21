@@ -39,8 +39,10 @@ Rules, not lessons (the lessons are [best-practices.md](best-practices.md)). The
 5. **When the exit code IS the measurement, do not pipe**: redirect to a file, then read the code.
 6. **Line endings are LF**, pinned in `.gitattributes` wildcard-first; verify with `git check-attr`.
 7. **Never run a formatter on `cmem/`** or on `tests/` fixtures.
-8. **`.github/workflows/*` use `run:` steps only** — this org's Actions policy turns any `uses:`
-   into a `startup_failure` ([overview.md](overview.md) § Release flow).
+8. **`.github/workflows/*` use `run:` steps only** — under the old `jrmarcum` owner the Actions
+   policy turned any `uses:` into a `startup_failure`; for the `synapticforge1` organization
+   (since 2026-10-21) it is unverified, and `run:` works under any policy
+   ([overview.md](overview.md) § Release flow).
 
 ## Boundaries
 
