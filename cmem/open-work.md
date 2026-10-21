@@ -23,8 +23,8 @@ lists what is still open. Close an item by striking it here with the commit that
 
 ## The move to the `synapticforge1` organization (by 2026-10-21)
 
-- ⬜ **First CI run in the new organization**: no workflow has run since the move. The next push
-  shows whether `run:`-only CI still passes there (it should under any policy).
+- ✅ **First CI run in the new organization**: run 39690350614 on `23aa737` (2026-10-21), all seven
+  jobs green, the new `npm:prove` step in Gates included (its first run on CI).
 - ✅ **The new organization's Actions policy** — owner, 2026-10-21: "it has the same policy as
   before, and is the same as was used with binaryang." The workflows stay `run:`-only (valid under
   any policy; [overview.md](overview.md) § Release flow).
