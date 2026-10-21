@@ -37,6 +37,8 @@ lists what is still open. Close an item by striking it here with the commit that
 - ✅ Built and proved on the `npm` branch: `@synapticforge1/universal-wasm-loader`,
   `scripts/npm/build.ts` + `prove.ts` (in CI), the `npm` job in `publish.yml` (off until
   `NPM_PUBLISH=true`). 6 of 6 mutants caught. [npm.md](npm.md).
+- ✅ (1) done 2026-10-21T23:03Z: `@synapticforge1/universal-wasm-loader@1.1.0` on npm, verified
+  as a user. ⏳ (2)–(4) next.
 - ⏳ **The owner's steps, in order** ([npm.md](npm.md) § "Left to the owner"): (1) the first version
   BY HAND, `bun run npm:prove --tag v1.1.0` then `npm publish --provenance=false` from `dist/` as
   `synapticforgeun`; (2) the trusted publisher on the package (repo

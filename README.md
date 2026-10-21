@@ -2,9 +2,26 @@
 
 A lightweight, zero-dependency WebAssembly loader for JavaScript, TypeScript, and the Web. Works in **Node.js 22.18+**, **Bun**, **Deno**, and all **modern browsers** without any configuration or bundler setup. Every release is tested on every current Node LTS line, on Bun and on Deno.
 
-Published to JSR with full build provenance for enhanced supply-chain security.
+Published to two registries with the same code under the same version number:
+[npm](https://www.npmjs.com/package/@synapticforge1/universal-wasm-loader) as
+`@synapticforge1/universal-wasm-loader` and [JSR](https://jsr.io/@jrmarcum/universal-wasm-loader) as
+`@jrmarcum/universal-wasm-loader`, both with build provenance (from 1.1.1 on npm).
 
 ## Installation
+
+### From npm
+
+```sh
+npm install @synapticforge1/universal-wasm-loader   # or: bun add / pnpm add / yarn add
+```
+
+```javascript
+import { wasmImport } from "@synapticforge1/universal-wasm-loader";
+```
+
+No `.npmrc` or extra registry is needed.
+
+### From JSR
 
 Install via [JSR](https://jsr.io/@jrmarcum/universal-wasm-loader):
 
@@ -53,6 +70,9 @@ import { wasmImport } from "@jrmarcum/universal-wasm-loader";
 `npx jsr add` and `bunx jsr add` write the dependency to `package.json` and the `@jsr` registry
 line to `.npmrc`; commit both. Importing `jsr:@jrmarcum/universal-wasm-loader` with no install
 step works on **Deno only**: Node and Bun do not resolve the `jsr:` prefix.
+
+The examples below import the JSR name; with the npm package, import
+`@synapticforge1/universal-wasm-loader` instead. Everything else is identical.
 
 ## Usage
 
@@ -209,7 +229,8 @@ It also runs the previous release's tests against the new code.
 
 ## Publishing
 
-This package is published to JSR via GitHub Actions on tag push (`v*`). OIDC provenance is recorded by JSR automatically — no manual token required.
+One tag push (`v*`) publishes to JSR and then to npm from GitHub Actions, with OIDC provenance on
+both (npm through trusted publishing) — no stored token.
 
 To release a new version: `bun run bump [patch|minor|major]` (raises `version` in `jsr.json`, the
 package manifest), then `bun run release`.
