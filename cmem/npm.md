@@ -50,7 +50,21 @@ from registry.npmjs.org (`dist.attestations.provenance.predicateType`, cache-bus
 the repository variable `NPM_PUBLISH` is `true`.** Versions are immutable on both registries: a
 failed npm job is re-run alone, never re-tagged.
 
-## ⏳ Left to the owner, in order (binaryang's experience, `publishing.md` § 1.13.1)
+## ✅ 1.1.0 on npm, published by hand (2026-10-21T23:03:05Z)
+
+By the owner, from `dist/` built and proved with `npm:prove --tag v1.1.0` (11 files byte-identical
+to the tag; npm 12.2.0, user `synapticforgeun`, `--provenance=false`). The public metadata
+answered 404 for about a minute after the publish (binaryang saw the same). Checked as a user
+from registry.npmjs.org: `npm install @synapticforge1/universal-wasm-loader@1.1.0`, then
+`math_50` and `strings_50` load through `wasmImport` / `createSingleton` on Node 22, 24, 26 and
+Bun. Trusted publisher and `NPM_PUBLISH`: the owner's (not readable from here: `npm trust list`
+asks for a fresh one-time password on every call; repository variables need GitHub auth); the
+1.1.1 release's `npm` job is their proof.
+
+On this machine npm runs as `fnm exec --using=24 cmd /c npm …` (`fnm exec npm` cannot start the
+`.cmd` shim).
+
+## Left to the owner, in order (binaryang's experience, `publishing.md` § 1.13.1)
 
 1. **The first version by hand** — npm's trusted publisher is configured on the PACKAGE, which must
    already exist. As `synapticforgeun`: `bun run npm:prove --tag v1.1.0` (builds `dist/` from the
