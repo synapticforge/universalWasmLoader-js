@@ -13,10 +13,10 @@ jobs:
       id-token: write
 
     steps:
-      # NOTE: This org's Actions policy only permits actions owned by `jrmarcum`.
-      # Third-party actions (actions/checkout, denoland/setup-deno, oven-sh/setup-bun) cause a
-      # `startup_failure` — the workflow never runs a single step. Every step
-      # here MUST therefore be a plain `run:` step. Do not reintroduce `uses:`.
+      # NOTE: every step is a plain `run:` step. Under the first owner (`jrmarcum`) a third-party
+      # `uses:` meant a `startup_failure` with no step run (v1.0.6, 2026-06-15). The repo is in the
+      # `synapticforge1` organization since 2026-10-21, with the same policy as binaryang there
+      # (owner); `run:` steps work under any policy.
       # Full history and tags (no --depth): the compatibility gate compares with the previous tag.
       - name: Checkout
         run: |
@@ -116,4 +116,73 @@ jobs:
             sleep 15
           done
           echo "::error::${PKG}@${VERSION} published WITHOUT provenance (no Rekor entry). The publish itself SUCCEEDED — the version exists and is immutable. Check the OIDC step above, the org/enterprise OIDC policy, and the JSR↔GitHub repo link."
+          exit 1
+
+  # npm, a SECOND registry beside JSR (owner, 2026-10-21: "setup an npm repository just as we did
+  # for binaryang"): the same tag, after JSR's job, as `@synapticforge1/universal-wasm-loader`.
+  # OFF until the repository variable NPM_PUBLISH is `true`, which comes after the first version is
+  # published by hand and the npm trusted publisher is configured (cmem/npm.md). Trusted
+  # publishing: GitHub OIDC (`id-token: write`), no token; npm >= 11.5 is required for it.
+  # Versions are immutable on both registries, so a failed npm job is re-run alone, never re-tagged.
+  npm:
+    name: Publish ${{ github.ref_name }} to npm
+    needs: publish
+    if: vars.NPM_PUBLISH == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        run: |
+          git clone --depth=1 --branch ${{ github.ref_name }} \
+            https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} .
+
+      - name: Install Bun and dev dependencies
+        run: |
+          curl -fsSL https://bun.sh/install | bash -s "bun-v1.4.3"
+          echo "$HOME/.bun/bin" >> $GITHUB_PATH
+          "$HOME/.bun/bin/bun" install --frozen-lockfile
+
+      - name: Install Node 24 and npm 11 (trusted publishing needs npm >= 11.5)
+        run: |
+          curl -fsSL https://fnm.vercel.app/install | bash -s -- --install-dir "$HOME/.fnm" --skip-shell
+          "$HOME/.fnm/fnm" install 24
+          "$HOME/.fnm/fnm" exec --using=24 npm install -g npm@11
+          "$HOME/.fnm/fnm" exec --using=24 npm --version
+
+      - name: Verify jsr.json version matches tag
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION="$(jq -r .version jsr.json)"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Tag version ($TAG_VERSION) does not match jsr.json version ($PKG_VERSION)"
+            exit 1
+          fi
+
+      # Builds dist/ and proves the tarball (installed and run) before anything is published.
+      - name: Build and prove the npm package
+        run: '"$HOME/.fnm/fnm" exec --using=24 bun run npm:prove'
+
+      - name: Publish to npm (trusted publishing, provenance)
+        working-directory: dist
+        run: '"$HOME/.fnm/fnm" exec --using=24 npm publish'
+
+      # The evidence, as for JSR: the attestation read back from the registry, cache-busted.
+      - name: Verify provenance was recorded on npm
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          URL="https://registry.npmjs.org/@synapticforge1%2Funiversal-wasm-loader/${VERSION}"
+          for i in $(seq 1 12); do
+            P=$(curl -sf -H "Cache-Control: no-cache" "${URL}?cb=${GITHUB_RUN_ID}-${i}" | jq -r '.dist.attestations.provenance.predicateType // empty' 2>/dev/null || true)
+            if [ -n "$P" ]; then
+              echo "npm provenance recorded: $P"
+              echo "- npm: @synapticforge1/universal-wasm-loader@${VERSION}, provenance $P" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "  attempt $i: not visible yet, retrying in 15s"
+            sleep 15
+          done
+          echo "::error::@synapticforge1/universal-wasm-loader@${VERSION} has no provenance attestation on npm. The version exists and is immutable."
           exit 1

@@ -1,3 +1,5 @@
 node_modules/
 .compat/
+dist/
+.npm-src/
 cmem/local/

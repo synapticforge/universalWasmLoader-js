@@ -25,13 +25,23 @@ lists what is still open. Close an item by striking it here with the commit that
 
 - ⬜ **First CI run in the new organization**: no workflow has run since the move. The next push
   shows whether `run:`-only CI still passes there (it should under any policy).
-- 🗓️ OWNER: **the new organization's Actions policy.** The `run:`-only rule came from the old
-  `jrmarcum` policy (only `jrmarcum`-owned actions allowed). If `synapticforge1` allows
-  `actions/checkout`, `oven-sh/setup-bun`, `actions/setup-node`, `denoland/setup-deno`, the
-  workflows could use them; until the owner says so they stay `run:`-only.
+- ✅ **The new organization's Actions policy** — owner, 2026-10-21: "it has the same policy as
+  before, and is the same as was used with binaryang." The workflows stay `run:`-only (valid under
+  any policy; [overview.md](overview.md) § Release flow).
 - ⬜ **Provenance from the new repo**: JSR's GitHub link already names
   `synapticforge1/universalWasmLoader-js` (2026-10-20); the next release's `rekorLogId` step is the
   proof.
+
+## npm (owner, 2026-10-21: "setup an npm repository just as we did for binaryang")
+
+- ✅ Built and proved on the `npm` branch: `@synapticforge1/universal-wasm-loader`,
+  `scripts/npm/build.ts` + `prove.ts` (in CI), the `npm` job in `publish.yml` (off until
+  `NPM_PUBLISH=true`). 6 of 6 mutants caught. [npm.md](npm.md).
+- ⏳ **The owner's steps, in order** ([npm.md](npm.md) § "Left to the owner"): (1) the first version
+  BY HAND, `bun run npm:prove --tag v1.1.0` then `npm publish --provenance=false` from `dist/` as
+  `synapticforgeun`; (2) the trusted publisher on the package (repo
+  `synapticforge1/universalWasmLoader-js`, workflow `publish.yml`); (3) the repository variable
+  `NPM_PUBLISH=true`; (4) a release (1.1.1) within 2 days of (2). Then the README's npm route.
 
 ## Unmeasured
 

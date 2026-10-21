@@ -7,10 +7,11 @@
 #   runtimes  — does the loader actually run where the README says it does? Every current
 #               Node LTS line plus the Node floor, Bun, and Deno, the SAME test file on each.
 #
-# NOTE: This org's Actions policy only permits actions owned by `jrmarcum`. Third-party
-# actions (actions/checkout, oven-sh/setup-bun, actions/setup-node, denoland/setup-deno)
-# cause a `startup_failure` — the workflow never runs a single step. Every step here MUST
-# therefore be a plain `run:` step. Do not reintroduce `uses:`.
+# NOTE: every step here is a plain `run:` step. Under the repo's first owner (`jrmarcum`), the
+# Actions policy turned any third-party `uses:` (actions/checkout, oven-sh/setup-bun,
+# actions/setup-node, denoland/setup-deno) into a `startup_failure` that ran no step at all.
+# Since 2026-10-21 the repo is in the `synapticforge1` organization, whose policy is the same as
+# binaryang's there (owner, 2026-10-21); `run:` steps work under any policy, so they stay.
 
 name: CI
 
@@ -79,6 +80,17 @@ jobs:
 
       - name: Test (Bun)
         run: bun run test
+
+      # The npm package (owner, 2026-10-21: `@synapticforge1/universal-wasm-loader`, as binaryang):
+      # built from jsr.json into dist/, packed, the TARBALL installed into a scratch consumer and
+      # run there on Node 24 and Bun (real fixtures through the published API), the shipped .d.ts
+      # type-checked by a consumer, the installed package bundled for the browser, the export list
+      # compared with JSR's own npm build. Nothing is published here.
+      - name: npm package (built, packed, installed, run)
+        run: |
+          curl -fsSL https://fnm.vercel.app/install | bash -s -- --install-dir "$HOME/.fnm" --skip-shell
+          "$HOME/.fnm/fnm" install 24
+          "$HOME/.fnm/fnm" exec --using=24 bun run npm:prove
 
       # Biome (owner, 2026-10-13), replacing deno lint: the recommended preset plus the five rules
       # deno lint's recommended set had that Biome leaves opt-in (biome.json; cmem/linting.md).
