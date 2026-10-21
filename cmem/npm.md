@@ -101,6 +101,23 @@ and corrected it; the variable is no longer read). ⏳ Owner: Actions → Publis
 npmjs.org also lists a `0.0.0-stage` version not published from here (seen 2026-10-21); the
 owner's to explain.
 
+### The recovery dispatch's first try: `ENEEDAUTH` (2026-10-21, run 39693562553)
+
+Every step passed up to `npm publish`, which failed: `npm error code ENEEDAUTH … You need to
+authorize this machine using npm adduser` (owner pasted the log; GitHub serves job logs only to
+signed-in users, 403 anonymously). Nothing was published. `ENEEDAUTH` is npm's SILENT fallback
+when its trusted-publishing (OIDC) exchange does not yield a token — the reason goes only to the
+runner's debug log. Note: binaryang's trusted publishing has never run either (its npm has only
+the hand-published 1.13.1), so there is no working reference in the workspace.
+
+Added to the `npm` job: an npm ≥ 11.5.1 check; a diagnostic step that makes the same exchange
+(GitHub OIDC token for audience `npm:registry.npmjs.org`, POST to the registry's
+`/-/npm/v1/oidc/token/exchange/package/…`) and prints the token's public claims (repository,
+`workflow_ref`, ref, environment) and the registry's answer, never a token — a WARNING, since the
+endpoint is reproduced from npm's behaviour, not tested outside a runner; and on a failed publish,
+the OIDC / auth lines of npm's debug log, token-shaped strings masked. The shell pieces (version
+compare, base64url padding, masking) were tested in Git Bash.
+
 ## Left to the owner, in order (binaryang's experience, `publishing.md` § 1.13.1)
 
 1. **The first version by hand** — npm's trusted publisher is configured on the PACKAGE, which must
