@@ -1,31 +1,54 @@
 name: Publish
 
+# ONE tag publishes to BOTH registries in ONE run (owner, 2026-10-21: "publishing at different
+# times is an issue"): JSR as @jrmarcum/universal-wasm-loader and npm as
+# @synapticforge1/universal-wasm-loader, the same code under the same version number.
+#
+#   verify   everything both publishes need, BEFORE either happens: the tag matches jsr.json, the
+#            full gate, the compatibility gate, the npm tarball proved, the JSR dry run, and the
+#            version FREE on both registries. Nothing is published here.
+#   jsr      after verify: deno publish (OIDC provenance), then the Rekor read-back.
+#   npm      after verify, IN PARALLEL with jsr: npm trusted publishing (OIDC, no token), then the
+#            attestation read-back. Not switchable off: a skipped npm job is how 1.1.1 reached JSR
+#            alone (the NPM_PUBLISH variable gate, removed 2026-10-21).
+#   release  after BOTH: the release/<tag> branch and the GitHub Release.
+#
+# The two registries cannot be published atomically. Everything that can fail on our side fails in
+# `verify`, so a split release needs a registry to fail between verify and its own publish; the
+# job that failed is then re-run alone ("Re-run failed jobs"; the version is free on that registry,
+# taken on the other, and versions are immutable on both, so never re-tag).
+#
+# workflow_dispatch (tag input) is the RECOVERY path for a registry that missed a release: it
+# runs the npm job only, for a tag JSR already has. JSR is never published by dispatch.
+#
+# NOTE: every step is a plain `run:` step. Under the first owner (`jrmarcum`) a third-party
+# `uses:` meant a `startup_failure` with no step run (v1.0.6, 2026-06-15). The repo is in the
+# `synapticforge1` organization since 2026-10-21, with the same policy as binaryang there
+# (owner); `run:` steps work under any policy.
+
 on:
   push:
     tags:
       - "v*"
-  # npm ONLY, for a release tag JSR already has (owner, 2026-10-21): v1.1.1's npm job was skipped
-  # because NPM_PUBLISH was not yet a repository variable. Actions → Publish → Run workflow, with
-  # the tag. The JSR job does not run on a dispatch.
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag to publish to npm (e.g. v1.1.1); JSR must already have it"
+        description: "RECOVERY: a release tag JSR already has, to publish to npm (e.g. v1.1.1)"
         required: true
 
+concurrency:
+  group: publish-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
 jobs:
-  publish:
+  verify:
+    name: Verify ${{ github.ref_name }} for JSR and npm
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      id-token: write
-
     steps:
-      # NOTE: every step is a plain `run:` step. Under the first owner (`jrmarcum`) a third-party
-      # `uses:` meant a `startup_failure` with no step run (v1.0.6, 2026-06-15). The repo is in the
-      # `synapticforge1` organization since 2026-10-21, with the same policy as binaryang there
-      # (owner); `run:` steps work under any policy.
       # Full history and tags (no --depth): the compatibility gate compares with the previous tag.
       - name: Checkout
         run: |
@@ -43,68 +66,99 @@ jobs:
           fi
           echo "Versions match: $TAG_VERSION"
 
+      # Neither registry may already hold this version: a version taken on one is a release that
+      # would end up split (both are immutable).
+      - name: Version is free on JSR and npm
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          JSR=$(curl -s -o /dev/null -w '%{http_code}' -H "Cache-Control: no-cache" "https://api.jsr.io/scopes/jrmarcum/packages/universal-wasm-loader/versions/${VERSION}?cb=${GITHUB_RUN_ID}")
+          NPM=$(curl -s -o /dev/null -w '%{http_code}' -H "Cache-Control: no-cache" "https://registry.npmjs.org/@synapticforge1%2Funiversal-wasm-loader/${VERSION}?cb=${GITHUB_RUN_ID}")
+          echo "JSR ${VERSION}: HTTP ${JSR}; npm ${VERSION}: HTTP ${NPM}"
+          if [ "$JSR" != "404" ] || [ "$NPM" != "404" ]; then
+            echo "::error::${VERSION} is not free on both registries (JSR ${JSR}, npm ${NPM}; 404 = free)"
+            exit 1
+          fi
+
       # The gate is CI's `gates` job, on Bun (the project's runtime since 2026-10-12).
-      - name: Install Bun
+      - name: Install Bun and dev dependencies
         run: |
           curl -fsSL https://bun.sh/install | bash -s "bun-v1.4.3"
           echo "$HOME/.bun/bin" >> $GITHUB_PATH
+          "$HOME/.bun/bin/bun" install --frozen-lockfile
 
       - name: Gate (types, lint, manifest, surface, fixtures, browser, tests)
-        run: |
-          bun install --frozen-lockfile
-          bun run gate
+        run: bun run gate
 
       # The compatibility gate on the tagged commit (letter H6): the jsr.json bump since the
       # previous tag must meet the surface floor, and for a patch/minor the previous tag's tests
-      # must pass against this source. A failure here stops the publish.
+      # must pass against this source.
       - name: Compatibility gate (release)
         run: bun run compat --release
 
-      # Publishing to JSR still needs Deno: `bunx jsr publish` downloads Deno and runs
-      # `deno publish` as a subprocess, which skips the type check when a package.json exists
-      # and is the kind of indirection that has lost OIDC provenance before. So Deno is
-      # installed here and `deno publish` is called DIRECTLY. With no deno.json in the repo it
-      # reads jsr.json on its own.
+      # The npm tarball, built from this tag, installed into a scratch consumer and run (Node 24 +
+      # Bun), before anything is published to either registry.
+      - name: npm package (built, packed, installed, run)
+        run: |
+          curl -fsSL https://fnm.vercel.app/install | bash -s -- --install-dir "$HOME/.fnm" --skip-shell
+          "$HOME/.fnm/fnm" install 24
+          "$HOME/.fnm/fnm" exec --using=24 bun run npm:prove
+
       - name: Install Deno
         run: |
           curl -fsSL https://deno.land/install.sh | sh
           echo "$HOME/.deno/bin" >> $GITHUB_PATH
 
-      # Provenance requires a GitHub OIDC token. The `id-token: write` permission
-      # above is what injects ACTIONS_ID_TOKEN_REQUEST_URL/_TOKEN into the runner.
-      # If they are absent here despite the permission, an org/enterprise Actions
-      # OIDC policy is blocking the token and `deno publish` will silently skip
-      # provenance (publish still succeeds). This checks a PREREQUISITE, not the
-      # outcome: the last step below is the real check.
+      - name: JSR publish dry run
+        run: deno publish --dry-run
+
+  jsr:
+    name: Publish ${{ github.ref_name }} to JSR
+    needs: verify
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        run: |
+          git clone --depth=1 --branch ${{ github.ref_name }} \
+            https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} .
+
+      # Publishing to JSR still needs Deno: `bunx jsr publish` downloads Deno and runs
+      # `deno publish` as a subprocess, which skips the type check when a package.json exists
+      # and is the kind of indirection that has lost OIDC provenance before. So `deno publish` is
+      # called DIRECTLY; with no deno.json in the repo it reads jsr.json on its own.
+      - name: Install Deno
+        run: |
+          curl -fsSL https://deno.land/install.sh | sh
+          echo "$HOME/.deno/bin" >> $GITHUB_PATH
+
+      # `deno publish` type-checks with tsconfig.json, whose `types: ["node"]` needs @types/node
+      # in node_modules: without it the check fails ("Could not find @types/node", measured
+      # 2026-10-21 on a tree with no node_modules).
+      - name: Install dev dependencies (for deno publish's type check)
+        run: |
+          curl -fsSL https://bun.sh/install | bash -s "bun-v1.4.3"
+          "$HOME/.bun/bin/bun" install --frozen-lockfile
+
+      # Provenance requires a GitHub OIDC token; `id-token: write` injects
+      # ACTIONS_ID_TOKEN_REQUEST_URL/_TOKEN. If they are absent, an org/enterprise OIDC policy is
+      # blocking the token and `deno publish` silently skips provenance. A PREREQUISITE only: the
+      # read-back below is the real check.
       - name: Check OIDC availability (provenance prerequisite)
         run: |
           if [ -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ] && [ -n "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]; then
             echo "OIDC token endpoint available — provenance prerequisites met."
           else
-            echo "::warning::OIDC token NOT available (URL present: ${ACTIONS_ID_TOKEN_REQUEST_URL:+yes}, TOKEN present: ${ACTIONS_ID_TOKEN_REQUEST_TOKEN:+yes}). deno publish will skip provenance. Verify id-token:write is honored — check org/enterprise Settings → Actions → General OIDC policy."
+            echo "::warning::OIDC token NOT available (URL present: ${ACTIONS_ID_TOKEN_REQUEST_URL:+yes}, TOKEN present: ${ACTIONS_ID_TOKEN_REQUEST_TOKEN:+yes}). deno publish will skip provenance."
           fi
 
       - name: Publish to JSR
         run: deno publish
 
-      - name: Create release branch
-        run: |
-          git checkout -b release/${GITHUB_REF_NAME}
-          git push origin release/${GITHUB_REF_NAME}
-
-      - name: Create GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create ${GITHUB_REF_NAME} \
-            --title "${GITHUB_REF_NAME}" \
-            --target release/${GITHUB_REF_NAME} \
-            --generate-notes
-
-      # THE evidence of provenance (design from binaryang/wasmtk): a green publish is not
-      # proof, because `deno publish` skips attestation non-fatally. Runs LAST: JSR versions
-      # are immutable, so this surfaces a problem loudly without blocking the release.
-      # JSR caches this endpoint, so every read is cache-busted.
+      # THE evidence of provenance (design from binaryang/wasmtk): `deno publish` skips attestation
+      # non-fatally. JSR caches this endpoint, so every read is cache-busted.
       - name: Verify provenance was recorded on JSR
         run: |
           PKG="$(jq -r .name jsr.json)"
@@ -118,7 +172,7 @@ jobs:
             REKOR=$(printf '%s' "$BODY" | jq -r '.rekorLogId // empty' 2>/dev/null || true)
             if [ -n "$REKOR" ]; then
               echo "Provenance recorded — Rekor log ID: $REKOR"
-              echo "- provenance recorded, Rekor log ID $REKOR" >> "$GITHUB_STEP_SUMMARY"
+              echo "- JSR: ${PKG}@${VERSION}, Rekor log ID $REKOR" >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
             echo "  attempt $i: not recorded yet, retrying in 15s"
@@ -127,47 +181,54 @@ jobs:
           echo "::error::${PKG}@${VERSION} published WITHOUT provenance (no Rekor entry). The publish itself SUCCEEDED — the version exists and is immutable. Check the OIDC step above, the org/enterprise OIDC policy, and the JSR↔GitHub repo link."
           exit 1
 
-  # npm, a SECOND registry beside JSR (owner, 2026-10-21: "setup an npm repository just as we did
-  # for binaryang"): the same tag, after JSR's job, as `@synapticforge1/universal-wasm-loader`.
-  # OFF until the repository variable NPM_PUBLISH is `true`, which comes after the first version is
-  # published by hand and the npm trusted publisher is configured (cmem/npm.md). Trusted
-  # publishing: GitHub OIDC (`id-token: write`), no token; npm >= 11.5 is required for it.
-  # Versions are immutable on both registries, so a failed npm job is re-run alone, never re-tagged.
-  # On a tag push it follows a SUCCESSFUL JSR job; on a dispatch it runs alone, for `inputs.tag`.
   npm:
     name: Publish ${{ inputs.tag || github.ref_name }} to npm
-    needs: publish
+    needs: verify
+    # A tag push: after verify, beside jsr. A dispatch (recovery): alone, verify skipped.
     if: >-
-      !cancelled() && vars.NPM_PUBLISH == 'true' &&
-      ((github.event_name == 'push' && needs.publish.result == 'success') ||
+      !cancelled() &&
+      ((github.event_name == 'push' && needs.verify.result == 'success') ||
        github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
     env:
-      # The input reaches the shell only through this variable, never interpolated into a script.
+      # The dispatch input reaches the shell only through this variable, never interpolated.
       RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
-
     steps:
-      - name: Check the release tag
+      # On a dispatch (recovery) only: a real release tag, which JSR already has and npm lacks.
+      - name: Check the recovery tag
+        if: github.event_name == 'workflow_dispatch'
         run: |
           if ! printf '%s' "$RELEASE_TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "::error::not a release tag: $RELEASE_TAG"
             exit 1
           fi
-          # npm never gets a version JSR does not have (JSR stays the source).
           VERSION="${RELEASE_TAG#v}"
           if ! curl -sf -H "Cache-Control: no-cache" "https://api.jsr.io/scopes/jrmarcum/packages/universal-wasm-loader/versions/${VERSION}?cb=${GITHUB_RUN_ID}" > /dev/null; then
-            echo "::error::JSR has no ${VERSION}: publish it to JSR first (push the tag)"
+            echo "::error::JSR has no ${VERSION}: a release starts with the tag push, not here"
             exit 1
           fi
-          echo "JSR has ${VERSION}; publishing it to npm"
+          if curl -sf -H "Cache-Control: no-cache" "https://registry.npmjs.org/@synapticforge1%2Funiversal-wasm-loader/${VERSION}?cb=${GITHUB_RUN_ID}" > /dev/null; then
+            echo "::error::npm already has ${VERSION}: nothing to recover"
+            exit 1
+          fi
+          echo "JSR has ${VERSION} and npm does not: publishing it to npm"
 
       - name: Checkout
         run: |
           git clone --depth=1 --branch "$RELEASE_TAG" \
             https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} .
+
+      - name: Verify jsr.json version matches tag
+        run: |
+          TAG_VERSION="${RELEASE_TAG#v}"
+          PKG_VERSION="$(jq -r .version jsr.json)"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Tag version ($TAG_VERSION) does not match jsr.json version ($PKG_VERSION)"
+            exit 1
+          fi
 
       - name: Install Bun and dev dependencies
         run: |
@@ -182,18 +243,14 @@ jobs:
           "$HOME/.fnm/fnm" exec --using=24 npm install -g npm@11
           "$HOME/.fnm/fnm" exec --using=24 npm --version
 
-      - name: Verify jsr.json version matches tag
+      # On a tag push `verify` proved the tarball already; a dispatch proves it here.
+      - name: Build (and, on a dispatch, prove) the npm package
         run: |
-          TAG_VERSION="${RELEASE_TAG#v}"
-          PKG_VERSION="$(jq -r .version jsr.json)"
-          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
-            echo "::error::Tag version ($TAG_VERSION) does not match jsr.json version ($PKG_VERSION)"
-            exit 1
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            "$HOME/.fnm/fnm" exec --using=24 bun run npm:prove
+          else
+            "$HOME/.fnm/fnm" exec --using=24 bun run npm:build
           fi
-
-      # Builds dist/ and proves the tarball (installed and run) before anything is published.
-      - name: Build and prove the npm package
-        run: '"$HOME/.fnm/fnm" exec --using=24 bun run npm:prove'
 
       - name: Publish to npm (trusted publishing, provenance)
         working-directory: dist
@@ -216,3 +273,30 @@ jobs:
           done
           echo "::error::@synapticforge1/universal-wasm-loader@${VERSION} has no provenance attestation on npm. The version exists and is immutable."
           exit 1
+
+  release:
+    name: GitHub Release ${{ github.ref_name }}
+    needs: [jsr, npm]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        run: |
+          git clone --depth=1 --branch ${{ github.ref_name }} \
+            https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} .
+
+      - name: Create release branch
+        run: |
+          git checkout -b release/${GITHUB_REF_NAME}
+          git push origin release/${GITHUB_REF_NAME}
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create ${GITHUB_REF_NAME} \
+            --title "${GITHUB_REF_NAME}" \
+            --target release/${GITHUB_REF_NAME} \
+            --generate-notes

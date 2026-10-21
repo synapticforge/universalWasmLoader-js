@@ -76,8 +76,10 @@ since 2026-10-13 ([linting.md](linting.md)).
 `jsr.json` version is the package version (since 2026-10-12; `deno.json` before). `bun run bump
 [patch|minor|major]` raises it, after the compatibility gate allows that level
 ([compat-gate.md](compat-gate.md)); `bun run release` commits, tags `vX.Y.Z`, and pushes → the
-`publish.yml` GitHub Action runs the Bun gate, then `deno publish` with OIDC provenance, then checks
-`rekorLogId` on `api.jsr.io`. `bun run release` spawns plain `git`; that works on this exFAT drive
+`publish.yml` GitHub Action verifies everything for BOTH registries first (gate, compatibility
+gate, the npm tarball, the version free on JSR and npm), then publishes to JSR and npm in parallel
+with OIDC provenance and reads both attestations back ([npm.md](npm.md) § "The release path",
+since 2026-10-21). `bun run release` spawns plain `git`; that works on this exFAT drive
 because the repo's path is in the global `safe.directory` list (added 2026-10-12).
 Provenance requires the GitHub OIDC token to reach the runner — the workflow has an
 "Check OIDC availability" diagnostic step (added 2026-06-15, mirroring wasmtk) because that org's

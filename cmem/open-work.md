@@ -38,9 +38,11 @@ lists what is still open. Close an item by striking it here with the commit that
 - ✅ (1) done 2026-10-21T23:03Z: `@synapticforge1/universal-wasm-loader@1.1.0` on npm, verified
   as a user. (2) the trusted publisher: confirmed by the owner. (4) 1.1.1 released: JSR ✅ with
   provenance (`3367515417`), npm job SKIPPED because `NPM_PUBLISH` is not a repository variable.
-- ⏳ **Owner: set `NPM_PUBLISH=true` as a repository VARIABLE, then Actions → Publish → Run
-  workflow → `v1.1.1`** (the npm-only dispatch, [npm.md](npm.md) § "1.1.1"). Within npm's 2-day
-  trusted-publisher window (~2026-10-23).
+- ✅ **One run publishes both** (owner, 2026-10-21): `verify` → `jsr` ∥ `npm` → `release`; the
+  `NPM_PUBLISH` switch removed. [npm.md](npm.md) § "The release path".
+- ⏳ **Owner: Actions → Publish → Run workflow → `v1.1.1`** (the recovery dispatch: JSR has
+  1.1.1, npm lacks it). Within npm's 2-day trusted-publisher window (~2026-10-23). Its provenance
+  read-back proves trusted publishing; the next tag push proves the one-run design.
 - ⏳ **The owner's steps, in order** ([npm.md](npm.md) § "Left to the owner"): (1) the first version
   BY HAND, `bun run npm:prove --tag v1.1.0` then `npm publish --provenance=false` from `dist/` as
   `synapticforgeun`; (2) the trusted publisher on the package (repo
@@ -67,6 +69,11 @@ lists what is still open. Close an item by striking it here with the commit that
   (hand-over table in [fixtures.md](fixtures.md)).
 
 ## To hand over (not this repo's to fix)
+
+- 🔴 **binaryang's releases can split the same way** (seen 2026-10-21): JSR latest **1.13.2**,
+  npm only **1.13.1**. Its `publish.yml` runs `npm` after JSR, gated on `vars.NPM_PUBLISH`; a
+  gate that is false skips npm silently. This repo's answer (one `verify` before either publish,
+  no switch, a recovery dispatch): [npm.md](npm.md) § "The release path".
 
 - 🔒 **binaryang and wasmtk switch to Biome too** (owner, 2026-10-13: "We are making the same
   switch for those projects also."). Their own sessions do it; this repo's

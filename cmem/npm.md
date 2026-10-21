@@ -41,14 +41,30 @@ lacks"; `jsr.json` shipped → "unexpected files". Two first attempts were bad: 
 from a `.d.ts` type changes nothing (declarations in a module `.d.ts` are exported anyway), and a
 clone without `typescript` installed made every type check fail for the wrong reason.
 
-## The release path
+## The release path — ONE run publishes BOTH (owner, 2026-10-21)
 
-`publish.yml` job **`npm`**: after the JSR job, the same tag; `run:` steps; Node 24 + npm 11 via
-fnm; tag = `jsr.json` version; `npm:prove`; `npm publish` from `dist/` by **trusted publishing**
-(GitHub OIDC, `id-token: write`, no token; npm ≥ 11.5); then the provenance attestation read back
-from registry.npmjs.org (`dist.attestations.provenance.predicateType`, cache-busted). **OFF until
-the repository variable `NPM_PUBLISH` is `true`.** Versions are immutable on both registries: a
-failed npm job is re-run alone, never re-tagged.
+🔒 Owner, 2026-10-21: "we will need to setup this workflow … so that the jsr and npm publish at
+the same time. publishing at different times is an issue." `publish.yml` since then:
+
+| job | does |
+| --- | --- |
+| `verify` | tag = `jsr.json` version; the version FREE on both registries (JSR and npm answer 404 for a missing version, measured); `bun run gate`; `compat --release`; `npm:prove`; the JSR dry run. Publishes nothing |
+| `jsr` | after `verify`: `deno publish` (OIDC), the Rekor read-back |
+| `npm` | after `verify`, IN PARALLEL with `jsr`: `npm:build`, `npm publish` by **trusted publishing** (OIDC, no token, npm ≥ 11.5), the attestation read-back (`dist.attestations.provenance.predicateType`) |
+| `release` | after BOTH: `release/<tag>` and the GitHub Release |
+
+- **No on/off switch.** The `NPM_PUBLISH` variable gate (binaryang's design) was REMOVED: a gate
+  that silently skips npm is how 1.1.1 reached JSR alone. A variable named `NPM_PUBLISH` (the owner
+  set it, 2026-10-21) is now unused.
+- **Not atomic**: the registries cannot be published together. Everything that can fail on our
+  side fails in `verify`; a registry failing during its own publish leaves a split, fixed by
+  "Re-run failed jobs" on that job (never re-tag: both are immutable).
+- **`workflow_dispatch` (input `tag`) = recovery only**: the npm job alone, for a tag JSR HAS and
+  npm LACKS (both checked), proving the tarball itself. JSR is never published by dispatch
+  (binaryang's record: JSR's OIDC actor on a dispatched run differs).
+- `deno publish` needs `node_modules`: `tsconfig.json`'s `types: ["node"]` makes its type check
+  look for `@types/node` ("Could not find @types/node", measured 2026-10-21), so the `jsr` job runs
+  `bun install` first.
 
 ## ✅ 1.1.0 on npm, published by hand (2026-10-21T23:03:05Z)
 
@@ -78,8 +94,10 @@ Re-running that run cannot help (it uses the workflow AT the tag, and its JSR jo
 the existing 1.1.1), so `publish.yml` gained a **`workflow_dispatch`** with a `tag` input (owner's
 choice, 2026-10-21): it runs ONLY the npm job, for a release tag JSR already has (checked against
 `api.jsr.io` first; the input reaches the shell through an env var and must match `vX.Y.Z`). Same
-workflow file name, so the trusted publisher still matches. ⏳ Owner: set the variable, then
-Actions → Publish → Run workflow → `v1.1.1`; the job's provenance read-back is the proof.
+workflow file name, so the trusted publisher still matches. 🔁 Superseded the same day by the
+one-run design above (the owner then found the cause: "I created a secret instead of a variable",
+and corrected it; the variable is no longer read). ⏳ Owner: Actions → Publish → Run workflow →
+`v1.1.1` (the recovery dispatch); its provenance read-back is the proof of trusted publishing.
 npmjs.org also lists a `0.0.0-stage` version not published from here (seen 2026-10-21); the
 owner's to explain.
 
