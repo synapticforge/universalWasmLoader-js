@@ -118,6 +118,18 @@ endpoint is reproduced from npm's behaviour, not tested outside a runner; and on
 the OIDC / auth lines of npm's debug log, token-shaped strings masked. The shell pieces (version
 compare, base64url padding, masking) were tested in Git Bash.
 
+**Second try, same day (with the diagnostics):** npm's debug log, as printed by the job: GitHub
+issued the OIDC token (`audience=npm:registry.npmjs.org`, HTTP 200), then
+`POST 404 …/-/npm/v1/oidc/token/exchange/package/@synapticforge1%2funiversal-wasm-loader` and
+`verbose oidc Failed token exchange request with body message: OIDC token exchange error -
+package not found`, then `ENEEDAUTH`. The package IS public (1.1.0), so "package not found" is
+npm declining to match a trusted publisher for this run: the workflow side works; the trusted
+publisher on npmjs.com is missing from THIS package or differs in a field (owner
+`synapticforge1`, repository `universalWasmLoader-js`, workflow `publish.yml`, no environment).
+Also confirmed the endpoint the diagnostic step uses is the one npm itself calls. ⏳ Owner: check
+with `npm trust list @synapticforge1/universal-wasm-loader` (asks for an OTP), fix, re-run the
+dispatch.
+
 ## Left to the owner, in order (binaryang's experience, `publishing.md` § 1.13.1)
 
 1. **The first version by hand** — npm's trusted publisher is configured on the PACKAGE, which must
