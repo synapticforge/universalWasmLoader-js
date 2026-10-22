@@ -18,6 +18,11 @@ lists what is still open. Close an item by striking it here with the commit that
   start function) crashed with a bare `TypeError` on `null`; it now throws an `Error` naming the
   import and the likely cause. Probed before/after; no other behaviour changed (surface floor:
   patch).
+- ✅ **No `@std` dependency (2026-10-21, owner: "I would rather not depend on any @std features
+  that may disappear with deno")**: the tests use `node:assert/strict`; `@std/assert` and `.npmrc`
+  (its JSR registry line) removed; the compatibility gate stands in for `@std/assert` when it runs
+  1.1.0's / 1.1.1's tests ([compat-gate.md](compat-gate.md)). What still needs Deno: `deno publish`
+  (below) and `regen-fixtures.ts` (wasmtk is a Deno project); Deno stays a TESTED runtime for users.
 - **Publishing still needs Deno** (`deno publish`, F2 of binaryang's exit guide). By design; JSR's
   to solve before ~2027-10. Re-check when JSR ships a non-Deno publisher that keeps provenance.
 

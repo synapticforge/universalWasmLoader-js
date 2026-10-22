@@ -18,7 +18,7 @@
  * `bun run bump` runs the same checks before it raises the version.
  */
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -110,6 +110,23 @@ export function surfaceAt(tag: string): Surface {
 }
 
 /**
+ * The tests of 1.1.0 and 1.1.1 import `assertStrictEquals` from `@std/assert`, which this repo no
+ * longer installs (owner, 2026-10-21: no `@std` that may disappear with Deno). For those tags a
+ * stand-in package goes into `<run>/node_modules`, found before the repo's own: the ONE function
+ * they use, as `node:assert/strict`'s `strictEqual` (the same `Object.is` comparison). Anything
+ * else imported from it fails the import, so an older suite that needs more turns RED loudly rather
+ * than passing on a guess.
+ */
+function standInStdAssert(run: string): void {
+  const test = join(run, "tests", "loader.test.js");
+  if (!existsSync(test) || !/from\s+["']@std\/assert["']/.test(readFileSync(test, "utf8"))) return;
+  const pkg = join(run, "node_modules", "@std", "assert");
+  mkdirSync(pkg, { recursive: true });
+  writeFileSync(join(pkg, "package.json"), '{ "name": "@std/assert", "type": "module", "exports": "./mod.js" }\n');
+  writeFileSync(join(pkg, "mod.js"), 'export { strictEqual as assertStrictEquals } from "node:assert/strict";\n');
+}
+
+/**
  * Rule 3: the previous tag's `tests/` against the NEW shipped files. Builds `.compat/` holding the
  * current `publish.include` files plus the tag's `tests/`, then runs the tag's suite there with the
  * runtime running this script. Returns the counts it read from the suite's OUTPUT.
@@ -126,6 +143,7 @@ export function previousTests(tag: string): { ok: boolean; summary: string } {
     }).publish.include;
     for (const f of include) cpSync(join(root, f), join(run, f));
     cpSync(join(tagDir, "tests"), join(run, "tests"), { recursive: true });
+    standInStdAssert(run);
 
     const bun = process.versions.bun !== undefined;
     const exe = process.execPath;

@@ -240,7 +240,7 @@ package manifest), then `bun run release`.
 Bun is the development runtime; the code and tests also run on Node and Deno.
 
 ```sh
-bun install          # dev dependencies (TypeScript, @types/node, @std/assert)
+bun install          # dev dependencies (TypeScript, @types/node, Biome); the tests need none
 bun run gate         # type check (incl. the shipped JS), Biome lint, manifest, API-surface
                      # snapshot, fixture stamp, browser check, tests on Bun
 bun run compat       # API floor since the last release + that release's tests on this code
