@@ -1,8 +1,10 @@
 /**
  * Reference test suite for @jrmarcum/universal-wasm-loader.
  *
- * Written on `node:test` + `@std/assert` so ONE file runs under every supported runtime
- * (Bun migration, 2026-10-12): never `bun:test` or `Deno.test`.
+ * Written on `node:test` + `node:assert` so ONE file runs under every supported runtime
+ * (Bun migration, 2026-10-12): never `bun:test` or `Deno.test`. No dependency at all: `@std/assert`
+ * was dropped 2026-10-21 (owner: no `@std` that may disappear with Deno); `strictEqual` from
+ * `node:assert/strict` is the same `Object.is` comparison.
  *
  *   bun run test        # bun test ./tests/loader.test.js  (the daily runner)
  *   bun run test:node   # node --test tests/loader.test.js
@@ -12,7 +14,7 @@
  * and the acquire/release pair each stay in one test, because each pair is one sequence.
  */
 import { describe, it } from "node:test";
-import { assertStrictEquals } from "@std/assert";
+import { strictEqual as assertStrictEquals } from "node:assert/strict";
 import { wasmImport, createSingleton, InstancePool } from "../universal-wasm-loader.js";
 
 /** @param {string} name */

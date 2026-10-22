@@ -31,6 +31,15 @@ becomes a burden, add reviewed exceptions as wasmtk did (`17e2054` there), not a
 `node --test`). Both suite formats are read from their OUTPUT: `loader.test.js` (1.1.0 on) and the
 older `run_tests.js` (1.0.8: 24 of 24 against today's source).
 
+**A stand-in for `@std/assert` (2026-10-21):** the tests of 1.1.0 and 1.1.1 import
+`assertStrictEquals` from `@std/assert`, which the repo no longer installs (owner: no `@std` that
+may disappear with Deno). `previousTests` writes a stand-in package into `.compat/run/node_modules`
+for such a tag: that one function, as `node:assert/strict`'s `strictEqual` (the same `Object.is`
+comparison); anything else imported fails loudly. Measured: without it the v1.1.1 suite was RED,
+0 pass / 1 fail (the import); with it, green 24/24, and the bool mutant gives 15 pass / 9 fail,
+the same as the original inversion with the real library. Needed until the previous release is
+one whose tests use `node:assert` (the next one).
+
 **Consumers (Rule 3, second half):** this package has no known JSR consumer that runs a suite;
 `-py` and `-rs` vendor copies under `upstream/`. Nothing to run yet; revisit if one appears.
 
