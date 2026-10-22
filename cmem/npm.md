@@ -126,9 +126,15 @@ package not found`, then `ENEEDAUTH`. The package IS public (1.1.0), so "package
 npm declining to match a trusted publisher for this run: the workflow side works; the trusted
 publisher on npmjs.com is missing from THIS package or differs in a field (owner
 `synapticforge1`, repository `universalWasmLoader-js`, workflow `publish.yml`, no environment).
-Also confirmed the endpoint the diagnostic step uses is the one npm itself calls. ⏳ Owner: check
-with `npm trust list @synapticforge1/universal-wasm-loader` (asks for an OTP), fix, re-run the
-dispatch.
+Also confirmed the endpoint the diagnostic step uses is the one npm itself calls. A third try gave
+the same. **Cause found by the owner's `npm trust list @synapticforge1/universal-wasm-loader`:
+"No trust configurations found for package"** — the trusted publisher had never been saved on
+this package (2026-10-21). ⏳ Owner: `npm trust github @synapticforge1/universal-wasm-loader
+--file publish.yml --repo synapticforge1/universalWasmLoader-js --allow-publish` (or the package's
+Settings page), `npm trust list` to confirm one entry, then the dispatch. 🎓 "package not found"
+from the OIDC exchange, for a package that exists, = no trusted publisher configured for it; check
+with `npm trust list` FIRST next time. binaryang's never-run trusted publishing should be checked
+the same way.
 
 ## Left to the owner, in order (binaryang's experience, `publishing.md` § 1.13.1)
 
