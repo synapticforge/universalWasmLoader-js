@@ -32,22 +32,13 @@ lists what is still open. Close an item by striking it here with the commit that
 
 ## npm (owner, 2026-10-21: "setup an npm repository just as we did for binaryang")
 
-- ✅ Built and proved on the `npm` branch: `@synapticforge1/universal-wasm-loader`,
-  `scripts/npm/build.ts` + `prove.ts` (in CI), the `npm` job in `publish.yml` (off until
-  `NPM_PUBLISH=true`). 6 of 6 mutants caught. [npm.md](npm.md).
-- ✅ (1) done 2026-10-21T23:03Z: `@synapticforge1/universal-wasm-loader@1.1.0` on npm, verified
-  as a user. (2) the trusted publisher: confirmed by the owner. (4) 1.1.1 released: JSR ✅ with
-  provenance (`3367515417`), npm job SKIPPED because `NPM_PUBLISH` is not a repository variable.
-- ✅ **One run publishes both** (owner, 2026-10-21): `verify` → `jsr` ∥ `npm` → `release`; the
-  `NPM_PUBLISH` switch removed. [npm.md](npm.md) § "The release path".
-- ⏳ **Owner: Actions → Publish → Run workflow → `v1.1.1`** (the recovery dispatch: JSR has
-  1.1.1, npm lacks it). Within npm's 2-day trusted-publisher window (~2026-10-23). Its provenance
-  read-back proves trusted publishing; the next tag push proves the one-run design.
-- ⏳ **The owner's steps, in order** ([npm.md](npm.md) § "Left to the owner"): (1) the first version
-  BY HAND, `bun run npm:prove --tag v1.1.0` then `npm publish --provenance=false` from `dist/` as
-  `synapticforgeun`; (2) the trusted publisher on the package (repo
-  `synapticforge1/universalWasmLoader-js`, workflow `publish.yml`); (3) the repository variable
-  `NPM_PUBLISH=true`; (4) a release (1.1.1) within 2 days of (2). Then the README's npm route.
+- ✅ **npm is live and in step with JSR (2026-10-21).** 1.1.0 by hand; **1.1.1 by trusted
+  publishing with provenance** (recovery dispatch run 39697206534), byte-identical to the tag, as
+  on JSR. The README has the npm route. One run now publishes both (`verify` → `jsr` ∥ `npm` →
+  `release`, no on/off switch). The way there (a secret instead of a variable; the trusted
+  publisher never saved, found by `npm trust list`): [npm.md](npm.md).
+- ⬜ **The next tag push is the first full run of the one-run design**; check both read-backs
+  (JSR `rekorLogId`, npm attestation) and that `release` waited for both.
 
 ## Unmeasured
 

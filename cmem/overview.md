@@ -18,8 +18,9 @@ JS-specific difference: path resolution (below).
 - **JSR:** the package stays `@jrmarcum/universal-wasm-loader` (the JSR scope did not move). JSR's
   GitHub link already names `synapticforge1/universalWasmLoader-js` (`api.jsr.io`, updated
   2026-10-20); proven by JSR 1.1.1's provenance (rekorLogId `3367515417`, 2026-10-21).
-- **npm** (owner, 2026-10-21): `@synapticforge1/universal-wasm-loader` — 1.1.0 published by hand;
-  ⏳ 1.1.1 waits on the npm-only dispatch — [npm.md](npm.md).
+- **npm** (owner, 2026-10-21): `@synapticforge1/universal-wasm-loader` — 1.1.0 by hand, **1.1.1
+  by trusted publishing with provenance** (SLSA v1), the same bytes as JSR's 1.1.1 —
+  [npm.md](npm.md).
 
 ## What it does
 

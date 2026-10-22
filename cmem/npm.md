@@ -136,6 +136,18 @@ from the OIDC exchange, for a package that exists, = no trusted publisher config
 with `npm trust list` FIRST next time. binaryang's never-run trusted publishing should be checked
 the same way.
 
+### ✅ npm 1.1.1 published by trusted publishing, with provenance (2026-10-21)
+
+The owner created the trusted publisher (`npm trust list`: type `github`, file `publish.yml`,
+repository `synapticforge1/universalWasmLoader-js`, permissions `publish, stage publish` — the
+`stage publish` permission is what the `0.0.0-stage` versions on npm come from). Recovery dispatch
+run 39697206534: the npm job green. registry.npmjs.org: **1.1.1 published, provenance
+`https://slsa.dev/provenance/v1`, `latest` = 1.1.1**, `repository` = the org repo. Checked as a
+user: `npm install …@1.1.1` loads `math_50` / `strings_50` on Node 22, 24, 26 and Bun; its 11
+files are byte-identical to the `v1.1.1` tag (git blob ids). **JSR and npm now hold the same 1.1.1.**
+The first trusted publish in the workspace (binaryang's has not run yet). The next tag push is the
+first test of the one-run design (`verify` → `jsr` ∥ `npm` → `release`).
+
 ## Left to the owner, in order (binaryang's experience, `publishing.md` § 1.13.1)
 
 1. **The first version by hand** — npm's trusted publisher is configured on the PACKAGE, which must
