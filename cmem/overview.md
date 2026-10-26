@@ -76,7 +76,11 @@ re-aligned to SPEC 3.0.0.
 `node:assert` — no dependency; `@std/assert` 2026-10-12 → 2026-10-21, `tests/run_tests.js` before) against fixtures produced by `wasmtk`
 (`math_50` / `booleans_50` / `strings_50` / `imports_50` / `wasi_io_50`, plus the hand-written
 `init_check`) and the lifecycle scenarios (`createSingleton`, `InstancePool`). Current (2026-10-13):
-**26 assertions in 24 tests, 24/24 on Bun 1.4.3, Node 22, 24 and 26, Deno 2.9.7**. The fixtures are
+**26 assertions in 24 tests, 24/24 on Bun 1.4.3, Node 22, 24 and 26, Deno 2.9.7**. Current
+(2026-10-26): **34 assertions in 28 tests** — four load over a local `node:http` server (the
+`fetch` path: a 404, `application/wasm`, `application/octet-stream`, a module that does not
+compile), so `test:deno` needs `--allow-net=127.0.0.1` — **28/28 on Bun 1.4.4, Node 22, 24, 26
+and Deno 2.9.8**. The fixtures are
 the stamped reference set every port copies, regenerated 2026-10-12 from wasmtk `f50c8e4` and
 re-stamped byte-identical 2026-10-26 from its post-purge twin `4a5c3cf668d`
 ([fixtures.md](fixtures.md)). The shipped `.js` is type-checked (`checkJs`) and linted by Biome

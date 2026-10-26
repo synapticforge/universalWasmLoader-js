@@ -48,21 +48,33 @@ lists what is still open. Close an item by striking it here with the commit that
 ## Unmeasured
 
 - **Browser RUN — measured once by hand 2026-10-26, not yet a gate.** The unbundled
-  `tests/loader.test.js` ran in headless **Chrome 156 and Edge 156**: an import map pointed
-  `node:test` / `node:assert/strict` at two small shims, a local http server served the repo, and
-  every fixture was fetched over http (`.wasm` as `application/wasm`): **24/24 in both**. Inverted:
-  `math_50.wasm` answering 404 → exactly its 8 tests failed. Same day: Bun 1.4.4 24/24, Node
-  22.23.3 / 24.21.0 / 26.12.0 24/24 each, Deno 2.9.8 24/24 steps. The harness was a one-time
-  scratchpad script (it used `import.meta.dir`, Bun-only); committing it as `bun run browser:run`
-  on `node:` builtins would make this a gate (same gap in binaryang). Firefox / Safari: UNMEASURED.
-- 🔴 **Found by that inversion, NOT fixed (2026-10-26): an HTTP error on the `.wasm` is masked.**
-  `universal-wasm-loader.js:75-86`: `instantiateStreaming` failures are swallowed by
-  `catch (_e) {}`, then a second `fetch` reads the 404 body without checking `res.ok`, so the
-  user sees `WebAssembly.instantiate(): BufferSource argument is empty` instead of "HTTP 404 for
-  <url>". The same catch also hides a real link/compile error behind a second download. Fix: check
-  `response.ok` (throw naming the URL and status) before both paths; keep the fallback only for a
-  wrong `Content-Type`. Behaviour of successful loads unchanged → surface floor patch; needs a test
-  (an http fixture server, or a `fetch` stub). Applies to every runtime that loads an http(s) URL.
+  `tests/loader.test.js` ran headless in **Chrome 156, Edge 156, Firefox 158 and Firefox ESR 153**
+  (both Firefox builds from scoop): an import map pointed `node:test` / `node:assert/strict` at two
+  small shims, a local http server served the repo, and every fixture was fetched over http
+  (`.wasm` as `application/wasm`): **24/24 in all four**. Inverted: `math_50.wasm` answering 404 →
+  exactly its 8 tests failed in each (V8: "BufferSource argument is empty"; Gecko: "failed to
+  match magic number" — the masked-error finding below, in both engines). Same day: Bun 1.4.4
+  24/24, Node 22.23.3 / 24.21.0 / 26.12.0 24/24 each, Deno 2.9.8 24/24 steps.
+  🔒 **Safari (owner, 2026-10-26): Bun is the test for Safari — it runs JavaScriptCore**, Safari's
+  engine. (What that covers: JSC's JavaScript and WebAssembly engine. Bun's `fetch` and module
+  loader are Bun's own, not WebKit's, so Safari's streaming-compile path is not exercised.)
+  The harness was a one-time scratchpad script (it used `import.meta.dir`, Bun-only); committing it
+  as `bun run browser:run` on `node:` builtins would make this a gate (same gap in binaryang).
+- ✅ **FIXED 2026-10-26 (owner: "fix the bug you found"), unreleased: an HTTP error on the `.wasm`
+  was masked.** Before: `instantiateWasm` swallowed every `instantiateStreaming` failure
+  (`catch (_e) {}`) and fetched AGAIN, reading the 404 body without checking `res.ok` — the user
+  saw an engine's empty-module error (V8 "BufferSource argument is empty", Gecko "failed to match
+  magic number", JSC "expected a module of at least 8 bytes") instead of the 404, and every
+  compile/link error or non-`application/wasm` response cost a second download. Now: ONE fetch;
+  `!res.ok` throws `wasmImport: HTTP <status> [<text>] for <url>`; streaming only when the
+  `Content-Type` is `application/wasm` (the one case it accepts), else `arrayBuffer`; no catch.
+  Four tests on a local `node:http` server (28 tests now); inverted against the old loader: 3 red
+  for the right reasons (the 404 message; 2 requests for octet-stream; 2 for a CompileError).
+  Gate: every CI step green incl. `compat` (previous tags' tests) and `surface --check` (no API
+  change → floor patch); Node 22/24/26, Deno 28/28; Chrome, Edge, Firefox, Firefox ESR 24/24 with
+  the 404 inversion now reading "HTTP 404 Not Found for <url>" in every engine. The `.wit` fetch
+  keeps SPEC §63's "404 → raw exports". Ships with the next `bun run bump patch` (owner's call).
+  The nine ports follow this load path: the workspace was told (C14 note).
 
 ## Workspace letters (`../../cmem/handoffs.md`)
 

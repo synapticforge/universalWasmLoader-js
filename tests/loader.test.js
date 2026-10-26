@@ -8,17 +8,49 @@
  *
  *   bun run test        # bun test ./tests/loader.test.js  (the daily runner)
  *   bun run test:node   # node --test tests/loader.test.js
- *   bun run test:deno   # deno test --allow-read --allow-env tests/loader.test.js
+ *   bun run test:deno   # deno test --allow-read --allow-env --allow-net=127.0.0.1 tests/loader.test.js
  *
  * The 26 assertions of the pre-migration `run_tests.js`, as 24 tests: the concurrent-pool pair
  * and the acquire/release pair each stay in one test, because each pair is one sequence.
+ * Since 2026-10-26: 28 tests (34 assertions), the four added loading over http (the fetch path).
  */
 import { describe, it } from "node:test";
-import { strictEqual as assertStrictEquals } from "node:assert/strict";
+import { rejects as assertRejects, strictEqual as assertStrictEquals } from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { createServer } from "node:http";
 import { wasmImport, createSingleton, InstancePool } from "../universal-wasm-loader.js";
 
 /** @param {string} name */
 const fixture = (name) => new URL(`./${name}`, import.meta.url);
+
+/**
+ * Serve `routes` (path → body + Content-Type; any other path is a 404) on 127.0.0.1 for the
+ * length of `fn`, counting the requests per path. `http:` loads take the `fetch` path that a
+ * browser takes; `file:` loads never reach it.
+ * @param {Record<string, { type: string, body: Uint8Array }>} routes
+ * @param {(base: string, hits: Map<string, number>) => Promise<void>} fn
+ */
+async function withServer(routes, fn) {
+  /** @type {Map<string, number>} */
+  const hits = new Map();
+  const server = createServer((req, res) => {
+    const path = req.url ?? "/";
+    hits.set(path, (hits.get(path) ?? 0) + 1);
+    const route = routes[path];
+    if (!route) {
+      res.writeHead(404).end();
+      return;
+    }
+    res.writeHead(200, { "content-type": route.type }).end(route.body);
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve(undefined)));
+  const { port } = /** @type {import("node:net").AddressInfo} */ (server.address());
+  try {
+    await fn(`http://127.0.0.1:${port}`, hits);
+  } finally {
+    await new Promise((resolve) => server.close(() => resolve(undefined)));
+  }
+}
 
 describe("math_50 — numeric round-trip", () => {
   it("add(3, 4) = 7", async () => {
@@ -152,6 +184,45 @@ describe("InstancePool — concurrent run() calls", () => {
     ]);
     assertStrictEquals(a, true);
     assertStrictEquals(b, false);
+  });
+});
+
+describe("http(s) — the fetch path", () => {
+  it("a 404 on the .wasm names the status and the URL", async () => {
+    await withServer({}, async (base, hits) => {
+      await assertRejects(wasmImport(`${base}/missing.wasm`), {
+        message: `wasmImport: HTTP 404 Not Found for ${base}/missing.wasm`,
+      });
+      assertStrictEquals(hits.get("/missing.wasm"), 1);
+    });
+  });
+  it("application/wasm: add(3,4)=7, one request", async () => {
+    const body = await readFile(fixture("math_50.wasm"));
+    const wit = await readFile(fixture("math_50.wit"));
+    const routes = {
+      "/math_50.wasm": { type: "application/wasm", body },
+      "/math_50.wit": { type: "text/plain", body: wit },
+    };
+    await withServer(routes, async (base, hits) => {
+      const { add } = await wasmImport(`${base}/math_50.wasm`);
+      assertStrictEquals(add(3, 4), 7);
+      assertStrictEquals(hits.get("/math_50.wasm"), 1);
+    });
+  });
+  it("application/octet-stream: still loads, square(5)=25", async () => {
+    const body = await readFile(fixture("math_50.wasm"));
+    await withServer({ "/math_50.wasm": { type: "application/octet-stream", body } }, async (base, hits) => {
+      const m = await wasmImport(`${base}/math_50.wasm`);
+      assertStrictEquals(m.square(5), 25);
+      assertStrictEquals(hits.get("/math_50.wasm"), 1);
+    });
+  });
+  it("a module that does not compile is reported once, as a CompileError", async () => {
+    const body = new Uint8Array([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, 0xff]);
+    await withServer({ "/bad.wasm": { type: "application/wasm", body } }, async (base, hits) => {
+      await assertRejects(wasmImport(`${base}/bad.wasm`), WebAssembly.CompileError);
+      assertStrictEquals(hits.get("/bad.wasm"), 1);
+    });
   });
 });
 

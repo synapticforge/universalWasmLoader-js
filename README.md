@@ -125,7 +125,7 @@ console.log(scale(3.0, 4.0)); // 12.0
 1. Resolves a relative `.wasm` path against the **loader's own location** (its `import.meta.url`); a `URL` or absolute path is used as given (see [Where your modules live](#where-your-modules-live))
 2. Auto-detects the companion `.wit` file by replacing `.wasm` → `.wit`
 3. Applies the Canonical ABI (wasmtime) — bool and string types handled automatically
-4. Reads a `file:` URL from disk on Node, Bun and Deno (Node's `fetch` does not accept `file:` URLs); otherwise uses `WebAssembly.instantiateStreaming` for best performance, falling back to `fetch` + `arrayBuffer`
+4. Reads a `file:` URL from disk on Node, Bun and Deno (Node's `fetch` does not accept `file:` URLs); otherwise fetches it once: an HTTP error throws `wasmImport: HTTP <status> for <url>`; a response served as `application/wasm` compiles with `WebAssembly.instantiateStreaming`, any other `Content-Type` through `arrayBuffer`
 5. Returns an ABI-translated proxy keyed by camelCase WIT export names
 
 If no `.wit` file is found, raw `WebAssembly.Exports` are returned.

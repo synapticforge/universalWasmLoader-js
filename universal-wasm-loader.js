@@ -72,17 +72,22 @@ async function instantiateWasm(url, importObject) {
     const { instance } = await WebAssembly.instantiate(fileBytes, importObject);
     return instance.exports;
   }
-  if (typeof WebAssembly.instantiateStreaming === "function") {
-    try {
-      const response = await fetch(url);
-      const { instance } = await WebAssembly.instantiateStreaming(response, importObject);
-      return instance.exports;
-    } catch (_e) {
-      // fall through to arrayBuffer path
-    }
+  // One fetch. An HTTP error is reported as one; a compile or link error reaches the
+  // caller as it is (never swallowed and retried).
+  const response = await fetch(url);
+  if (!response.ok) {
+    // statusText is empty over HTTP/2.
+    const status = response.statusText ? `${response.status} ${response.statusText}` : `${response.status}`;
+    throw new Error(`wasmImport: HTTP ${status} for ${url.href}`);
   }
-  const bytes = await (await fetch(url)).arrayBuffer();
-  const { instance } = await WebAssembly.instantiate(bytes, importObject);
+  // instantiateStreaming refuses any other Content-Type, so a server that sends
+  // `.wasm` as e.g. application/octet-stream takes the arrayBuffer path instead.
+  const mime = (response.headers.get("content-type") ?? "").replace(/;.*$/s, "").trim().toLowerCase();
+  if (typeof WebAssembly.instantiateStreaming === "function" && mime === "application/wasm") {
+    const { instance } = await WebAssembly.instantiateStreaming(response, importObject);
+    return instance.exports;
+  }
+  const { instance } = await WebAssembly.instantiate(await response.arrayBuffer(), importObject);
   return instance.exports;
 }
 
