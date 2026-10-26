@@ -13,14 +13,23 @@ JS-specific difference: path resolution (below).
 - **GitHub:** `https://github.com/synapticforge1/universalWasmLoader-js`, a public repo of the
   **`synapticforge1` organization** (owner-controlled). 🔁 Moved there by the owner by 2026-10-21;
   before: `jrmarcum/universalWasmLoader-js` (from 2026-10-12), `jrmarcum/universalWasmLoader`
-  before that. GitHub redirects both old URLs. binaryang moved to `synapticforge1` too; wasmtk is
-  still `jrmarcum/wasmtk` (2026-10-21).
+  before that. GitHub redirects both old URLs. binaryang moved to `synapticforge1` too, and wasmtk
+  followed on 2026-10-23 (`synapticforge1/wasmtk`; this repo's links to it fixed 2026-10-26, H17).
 - **JSR:** the package stays `@jrmarcum/universal-wasm-loader` (the JSR scope did not move). JSR's
   GitHub link already names `synapticforge1/universalWasmLoader-js` (`api.jsr.io`, updated
   2026-10-20); proven by JSR 1.1.1's provenance (rekorLogId `3367515417`, 2026-10-21).
 - **npm** (owner, 2026-10-21): `@synapticforge1/universal-wasm-loader` — 1.1.0 by hand, **1.1.1
   by trusted publishing with provenance** (SLSA v1), the same bytes as JSR's 1.1.1 —
   [npm.md](npm.md).
+- **Trusted publishing after the move (letter H20, recorded 2026-10-26).** Both registries
+  published 1.1.1 from the ORG repo on 2026-10-21, after the move, so neither policy is stuck on
+  the old owner. JSR: the package is linked to `synapticforge1/universalWasmLoader-js` (the link
+  updated by the owner 2026-10-20) and `deno publish` in `publish.yml` gets its OIDC token from
+  that run; the 1.1.1 provenance (rekorLogId `3367515417`) names the org repo. npm: the trusted
+  publisher was CREATED after the move (`npm trust list`: `github`, `publish.yml`,
+  `synapticforge1/universalWasmLoader-js`), so whatever IDs it locked are the org's. UNMEASURED:
+  whether either registry pins the repository/owner numeric IDs (neither UI shows them); it
+  matters only on a further transfer or rename — then re-check both before the next release.
 
 ## What it does
 
@@ -68,7 +77,8 @@ re-aligned to SPEC 3.0.0.
 (`math_50` / `booleans_50` / `strings_50` / `imports_50` / `wasi_io_50`, plus the hand-written
 `init_check`) and the lifecycle scenarios (`createSingleton`, `InstancePool`). Current (2026-10-13):
 **26 assertions in 24 tests, 24/24 on Bun 1.4.3, Node 22, 24 and 26, Deno 2.9.7**. The fixtures are
-the stamped reference set every port copies, regenerated 2026-10-12 from wasmtk `f50c8e4`
+the stamped reference set every port copies, regenerated 2026-10-12 from wasmtk `f50c8e4` and
+re-stamped byte-identical 2026-10-26 from its post-purge twin `4a5c3cf668d`
 ([fixtures.md](fixtures.md)). The shipped `.js` is type-checked (`checkJs`) and linted by Biome
 since 2026-10-13 ([linting.md](linting.md)).
 

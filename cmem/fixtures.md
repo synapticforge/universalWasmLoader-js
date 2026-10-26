@@ -13,12 +13,24 @@ built them, the git blob id of each source, and the sha256 of every fixture file
   unstamped `.wasm` / `.wit` / `.wat` in `tests/`. Inverted 2026-10-12 (one flipped byte + one
   stray `.wit` → both named, exit 1).
 
+## The 2026-10-26 re-stamp (H7 / drift X8 / ledger C11)
+
+wasmtk rewrote its history twice (2026-10-23, 2026-10-26: paths only), so `f50c8e4` no longer
+exists anywhere; its rewritten twin is **`4a5c3cf668d`** (`v2.0.3-64-g4a5c3cf`, the same commit
+date 2026-10-09T20:13:12-04:00, map `../../wasmtk/cmem/history-purge-2026-10-26.md`), and it IS
+on `synapticforge1/wasmtk` `origin/main` (`git branch -r --contains`). Measured 2026-10-26: a
+fresh clone from GitHub, checked out at that commit (clean); the five source blob ids equal the
+old stamp's; `bun scripts/regen-fixtures.ts <clone>` rebuilt all ten `.wasm` / `.wit`
+**byte-identical** to the 2026-10-12 set — only the stamp's `repository`, `commit` and `describe`
+changed. The generator's URL in `scripts/regen-fixtures.ts` now names the org. The ports copy
+`tests/fixtures.json` again (their `files` hashes are unchanged; only `generator` moved).
+
 ## The 2026-10-12 regeneration
 
 🔒 Owner, 2026-10-12: the reference set comes from **wasmtk HEAD `f50c8e4`**
 (`v2.0.3-64-gf50c8e419a0`, committed 2026-10-09), "after a push": the owner pushes wasmtk's
-`main` so the stamped commit is pinnable. ⏳ **On 2026-10-12, and again 2026-10-13, `f50c8e4` was on NO remote branch**
-(`git branch -r --contains` empty). Re-check before telling the ports to copy.
+`main` so the stamped commit is pinnable. On 2026-10-12, and again 2026-10-13, `f50c8e4` was on NO remote branch
+(`git branch -r --contains` empty). ✅ Superseded by the 2026-10-26 re-stamp above.
 
 Measured the same day, the same five sources built three ways:
 

@@ -51,3 +51,20 @@ Rules, not lessons (the lessons are [best-practices.md](best-practices.md)). The
 - **Machine facts** (exFAT `safe.directory`, long paths, PowerShell's UTF-8 BOM) live in the
   workspace's `cmem/local/environment.md` and this repo's gitignored `cmem/local/`, never in a
   committed file. The traps that shaped a tool are recorded beside the tool.
+
+## No secrets or personal information (🔒 owner, 2026-10-22/23/26; letters H18, H22, H28)
+
+- **The path test is "is it machine-specific?", not "is it absolute?"** Not public: any path that
+  records the owner's own machine layout — a user profile, the project tree, other drives, scoop /
+  AppData installs, scratchpad or session ids. Fine: repo- or sibling-relative paths, env vars,
+  placeholders (`<repo-root>`), and a convention path that names nothing about one machine. A scan
+  hit is a CANDIDATE judged by that test. Full rule: `../../cmem/working-rules.md` § Records.
+- **No secrets** (tokens, keys, passwords) in any committed file, commit message, package or issue.
+- **One maintainer contact address**, allowed only in a registry manifest's maintainer field, as
+  the commit author/committer address, and in ONE committed `cmem/` contact note. This repo uses
+  only the commit address: neither `jsr.json` nor the npm manifest carries an email, and no
+  `cmem/` note names one (checked 2026-10-26).
+- **Scan before committing memory, binaries included** (`git grep -a`, not `-I`: DWARF in a
+  `.wasm` carries build paths). 2026-10-26: no hit at HEAD in text or binary files; H25 measured
+  no drive path in any commit of any ref, so no history purge is needed here.
+- `.claude/settings.local.json` is per-machine and gitignored (2026-10-26, H25 (b)'s lesson).
