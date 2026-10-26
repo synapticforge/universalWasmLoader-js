@@ -114,9 +114,15 @@ JSR). The v1.0.6 tag hit exactly this when the workflow was briefly switched to 
 the one **at the tagged commit**, so the tag must point at a commit that already contains a `run:`-only
 `publish.yml`.
 
-**Published:** `@jrmarcum/universal-wasm-loader@1.1.1` is live on JSR (2026-10-21) — **score 100**,
-provenance recorded (rekorLogId 3367515417), the first release from the `synapticforge1` org.
-Before it, 1.1.0 (2026-10-12, rekorLogId 3232619821): It was the first release from the Bun toolchain, and it
+**Published:** `@jrmarcum/universal-wasm-loader@1.1.2` is live on JSR and
+`@synapticforge1/universal-wasm-loader@1.1.2` on npm (2026-10-26, owner: "push and release the
+next version") — the masked-HTTP-error fix. Publish run 40380578962: verify → JSR ∥ npm → GitHub
+Release, all green, the first full run of the one-run design. Read back independently: JSR
+rekorLogId **3493886393**, latest 1.1.2, **score 100**, linked to the org repo; npm latest 1.1.2,
+provenance SLSA v1; npm's 11 files byte-identical to the `v1.1.2` tag (git blob ids; `package.json`
+generated); a fresh `npm install …@1.1.2` on Node 24 loads `math_50` and reports a 404 as
+`wasmImport: HTTP 404 Not Found for <url>`. Before it, **1.1.1** (2026-10-21, rekorLogId
+3367515417) was the first release from the `synapticforge1` org. Before that, 1.1.0 (2026-10-12, rekorLogId 3232619821): It was the first release from the Bun toolchain, and it
 contains SPEC §10 plus the Node `file:` fix ([bun-migration.md](bun-migration.md)). 1.0.8 before it
 also scored 100 with provenance. The `run:`-only workflow delivered provenance cleanly both times.
 

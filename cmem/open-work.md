@@ -42,8 +42,9 @@ lists what is still open. Close an item by striking it here with the commit that
   on JSR. The README has the npm route. One run now publishes both (`verify` → `jsr` ∥ `npm` →
   `release`, no on/off switch). The way there (a secret instead of a variable; the trusted
   publisher never saved, found by `npm trust list`): [npm.md](npm.md).
-- ⬜ **The next tag push is the first full run of the one-run design**; check both read-backs
-  (JSR `rekorLogId`, npm attestation) and that `release` waited for both.
+- ✅ **First full run of the one-run design: v1.1.2, 2026-10-26** (publish run 40380578962):
+  `verify` → `jsr` ∥ `npm` → `release` (GitHub Release after both), all green; read-backs JSR
+  rekorLogId 3493886393, npm SLSA v1 provenance ([overview.md](overview.md) § Release flow).
 
 ## Unmeasured
 
@@ -60,8 +61,8 @@ lists what is still open. Close an item by striking it here with the commit that
   loader are Bun's own, not WebKit's, so Safari's streaming-compile path is not exercised.)
   The harness was a one-time scratchpad script (it used `import.meta.dir`, Bun-only); committing it
   as `bun run browser:run` on `node:` builtins would make this a gate (same gap in binaryang).
-- ✅ **FIXED 2026-10-26 (owner: "fix the bug you found"), unreleased: an HTTP error on the `.wasm`
-  was masked.** Before: `instantiateWasm` swallowed every `instantiateStreaming` failure
+- ✅ **FIXED 2026-10-26 (owner: "fix the bug you found"), RELEASED in 1.1.2 the same day: an HTTP
+  error on the `.wasm` was masked.** Before: `instantiateWasm` swallowed every `instantiateStreaming` failure
   (`catch (_e) {}`) and fetched AGAIN, reading the 404 body without checking `res.ok` — the user
   saw an engine's empty-module error (V8 "BufferSource argument is empty", Gecko "failed to match
   magic number", JSC "expected a module of at least 8 bytes") instead of the 404, and every
@@ -73,7 +74,7 @@ lists what is still open. Close an item by striking it here with the commit that
   Gate: every CI step green incl. `compat` (previous tags' tests) and `surface --check` (no API
   change → floor patch); Node 22/24/26, Deno 28/28; Chrome, Edge, Firefox, Firefox ESR 24/24 with
   the 404 inversion now reading "HTTP 404 Not Found for <url>" in every engine. The `.wit` fetch
-  keeps SPEC §63's "404 → raw exports". Ships with the next `bun run bump patch` (owner's call).
+  keeps SPEC §63's "404 → raw exports". Shipped as 1.1.2 (`Release v1.1.2` `7b62387`).
   The nine ports follow this load path: the workspace was told (C14 note).
 
 ## Workspace letters (`../../cmem/handoffs.md`)
