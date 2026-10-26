@@ -48,13 +48,18 @@ lists what is still open. Close an item by striking it here with the commit that
 ## Unmeasured
 
 - **Browser RUN — measured once by hand 2026-10-26, not yet a gate.** The unbundled
-  `tests/loader.test.js` ran in headless **Chrome 156 and Edge 156**: an import map pointed
-  `node:test` / `node:assert/strict` at two small shims, a local http server served the repo, and
-  every fixture was fetched over http (`.wasm` as `application/wasm`): **24/24 in both**. Inverted:
-  `math_50.wasm` answering 404 → exactly its 8 tests failed. Same day: Bun 1.4.4 24/24, Node
-  22.23.3 / 24.21.0 / 26.12.0 24/24 each, Deno 2.9.8 24/24 steps. The harness was a one-time
-  scratchpad script (it used `import.meta.dir`, Bun-only); committing it as `bun run browser:run`
-  on `node:` builtins would make this a gate (same gap in binaryang). Firefox / Safari: UNMEASURED.
+  `tests/loader.test.js` ran headless in **Chrome 156, Edge 156, Firefox 158 and Firefox ESR 153**
+  (both Firefox builds from scoop): an import map pointed `node:test` / `node:assert/strict` at two
+  small shims, a local http server served the repo, and every fixture was fetched over http
+  (`.wasm` as `application/wasm`): **24/24 in all four**. Inverted: `math_50.wasm` answering 404 →
+  exactly its 8 tests failed in each (V8: "BufferSource argument is empty"; Gecko: "failed to
+  match magic number" — the masked-error finding below, in both engines). Same day: Bun 1.4.4
+  24/24, Node 22.23.3 / 24.21.0 / 26.12.0 24/24 each, Deno 2.9.8 24/24 steps.
+  🔒 **Safari (owner, 2026-10-26): Bun is the test for Safari — it runs JavaScriptCore**, Safari's
+  engine. (What that covers: JSC's JavaScript and WebAssembly engine. Bun's `fetch` and module
+  loader are Bun's own, not WebKit's, so Safari's streaming-compile path is not exercised.)
+  The harness was a one-time scratchpad script (it used `import.meta.dir`, Bun-only); committing it
+  as `bun run browser:run` on `node:` builtins would make this a gate (same gap in binaryang).
 - 🔴 **Found by that inversion, NOT fixed (2026-10-26): an HTTP error on the `.wasm` is masked.**
   `universal-wasm-loader.js:75-86`: `instantiateStreaming` failures are swallowed by
   `catch (_e) {}`, then a second `fetch` reads the 404 body without checking `res.ok`, so the
