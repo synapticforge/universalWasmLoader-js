@@ -47,8 +47,22 @@ lists what is still open. Close an item by striking it here with the commit that
 
 ## Unmeasured
 
-- **Browser RUN**: `bun run browser` proves the export BUNDLES and the shipped source has no
-  top-level `node:` import; nothing loads a module in a headless browser yet (same gap in binaryang).
+- **Browser RUN — measured once by hand 2026-10-26, not yet a gate.** The unbundled
+  `tests/loader.test.js` ran in headless **Chrome 156 and Edge 156**: an import map pointed
+  `node:test` / `node:assert/strict` at two small shims, a local http server served the repo, and
+  every fixture was fetched over http (`.wasm` as `application/wasm`): **24/24 in both**. Inverted:
+  `math_50.wasm` answering 404 → exactly its 8 tests failed. Same day: Bun 1.4.4 24/24, Node
+  22.23.3 / 24.21.0 / 26.12.0 24/24 each, Deno 2.9.8 24/24 steps. The harness was a one-time
+  scratchpad script (it used `import.meta.dir`, Bun-only); committing it as `bun run browser:run`
+  on `node:` builtins would make this a gate (same gap in binaryang). Firefox / Safari: UNMEASURED.
+- 🔴 **Found by that inversion, NOT fixed (2026-10-26): an HTTP error on the `.wasm` is masked.**
+  `universal-wasm-loader.js:75-86`: `instantiateStreaming` failures are swallowed by
+  `catch (_e) {}`, then a second `fetch` reads the 404 body without checking `res.ok`, so the
+  user sees `WebAssembly.instantiate(): BufferSource argument is empty` instead of "HTTP 404 for
+  <url>". The same catch also hides a real link/compile error behind a second download. Fix: check
+  `response.ok` (throw naming the URL and status) before both paths; keep the fallback only for a
+  wrong `Content-Type`. Behaviour of successful loads unchanged → surface floor patch; needs a test
+  (an http fixture server, or a `fetch` stub). Applies to every runtime that loads an http(s) URL.
 
 ## Workspace letters (`../../cmem/handoffs.md`)
 
@@ -60,9 +74,17 @@ lists what is still open. Close an item by striking it here with the commit that
   Not done: Rule 3's CONSUMER half — no known consumer runs a suite ([compat-gate.md](compat-gate.md)).
 - **H7 (all loaders)** — this repo's part DONE 2026-10-12 on branch `h7`: the reference set is
   regenerated from wasmtk `f50c8e4` and stamped (`tests/fixtures.json`, `bun run fixtures`;
-  [fixtures.md](fixtures.md)). L1–L8 are all other ports' items (none names -js). ⏳ Waiting on:
-  the owner pushing wasmtk `main` so `f50c8e4` is pinnable; then the nine ports copy the set
-  (hand-over table in [fixtures.md](fixtures.md)).
+  [fixtures.md](fixtures.md)). L1–L8 are all other ports' items (none names -js). ✅ **Re-stamped
+  2026-10-26** from the pushed post-purge twin `4a5c3cf668d` (`synapticforge1/wasmtk`), bytes
+  unchanged (drift X8, ledger C11); the nine ports may copy the set now (hand-over table in
+  [fixtures.md](fixtures.md)).
+- ✅ **Workspace letters pulled 2026-10-26** (owner: "fix the open items, then make notations
+  for the workspace to verify"), on branch `workspace-letters-2026-10-26`: H16 (`maintenance.strategy
+  gc`, private note in `cmem/local/`), H17 part 3 (`VISION.md`, `regen-fixtures.ts`), H20 recorded
+  ([overview.md](overview.md) § Where it lives), H22 / H25 (d) / H28 recorded
+  ([working-rules.md](working-rules.md) § No secrets), H24 + C8 + H27 (★ re-copied and re-stamped,
+  [best-practices.md](best-practices.md)), the pull line in `CLAUDE.md` now reads the workspace
+  ledger first. Answers written to `../../cmem/workspace-correspondence.md`; the workspace closes.
 
 ## To hand over (not this repo's to fix)
 
@@ -86,5 +108,5 @@ lists what is still open. Close an item by striking it here with the commit that
   `node:fs` import with an empty-object stub, so a bundle-only check passes code that breaks in a
   page. This repo's check adds a source scan ([bun-migration.md](bun-migration.md) § "Checks").
   Reported to the owner 2026-10-12.
-- **Workspace `cmem/local/environment.md`** still says every repo needs a `safe.directory` entry;
-  for all ten loaders' current paths that is done (2026-10-12).
+- ✅ **`safe.directory`**: since 2026-10-26 the owner's SYSTEM config holds a wildcard for the
+  whole workspace folder (ledger C9, closed); no per-command override is needed here.

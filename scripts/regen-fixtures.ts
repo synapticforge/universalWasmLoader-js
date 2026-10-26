@@ -77,7 +77,7 @@ if (isMain) {
       "and verify them against this file. Written by scripts/regen-fixtures.ts; do not edit by hand.",
     generator: {
       tool: "wasmtk modc",
-      repository: "https://github.com/jrmarcum/wasmtk",
+      repository: "https://github.com/synapticforge1/wasmtk",
       commit,
       describe,
       committed,

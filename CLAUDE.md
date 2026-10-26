@@ -1,6 +1,8 @@
 # CLAUDE.md — universal-wasm-loader (pointer)
 
-> **At session start, read `../../cmem/handoffs.md` for letters addressed to this repo.** The workspace
+> **At session start, and before each new work item, read `../../cmem/workspace-correspondence.md`**
+> (every row whose "to" names this repo, or whose subject touches the work), then the letter it
+> points to in `../../cmem/handoffs.md` (owner, 2026-10-26; was handoffs-first). The workspace
 > session (`../../cmem/INDEX.md`) reviews across the sibling repos and reports there; nothing is ever
 > written into this repo from outside. (owner directive, 2026-09-20)
 
